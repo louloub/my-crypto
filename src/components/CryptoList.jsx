@@ -2,11 +2,16 @@ import React, { useEffect, useState } from "react";
 import { Table } from "reactstrap";
 import axios from "axios";
 
+const instance = axios.create({ baseURL: "http://localhost:5000/" });
+
 const CryptoList = props => {
   const [cryptoList, setCrytpoList] = useState([]);
 
   useEffect(() => {
-    axios.get(`/cryptolist`).then(res => setCrytpoList(res.data[0]));
+    console.log("in useeffect");
+    try {
+      instance.get(`/cryptolist`).then(res => setCrytpoList(res.data[0]));
+    } catch (err) {}
   }, []);
 
   return (
