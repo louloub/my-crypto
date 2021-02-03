@@ -7,10 +7,11 @@ const instance = axios.create({ baseURL: "http://localhost:5000/" });
 const CryptoList = props => {
   const [cryptoList, setCrytpoList] = useState([]);
 
-  useEffect(() => {
+  useEffect(async () => {
     console.log("in useeffect");
     try {
-      instance.get(`/cryptolist`).then(res => setCrytpoList(res.data[0]));
+      const cryptoList = await instance.get(`/cryptolist`);
+      setCrytpoList(cryptoList.data);
     } catch (err) {}
   }, []);
 
@@ -18,7 +19,6 @@ const CryptoList = props => {
     <Table responsive>
       <thead>
         <tr>
-          <th>#</th>
           <th>Name</th>
           <th>Coin</th>
           <th>Actual Price</th>
@@ -27,30 +27,17 @@ const CryptoList = props => {
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <th scope="row">1</th>
-          <td>Table cell</td>
-          <td>Table cell</td>
-          <td>Table cell</td>
-          <td>Table cell</td>
-          <td>Table cell</td>
-        </tr>
-        <tr>
-          <th scope="row">2</th>
-          <td>Table cell</td>
-          <td>Table cell</td>
-          <td>Table cell</td>
-          <td>Table cell</td>
-          <td>Table cell</td>
-        </tr>
-        <tr>
-          <th scope="row">3</th>
-          <td>Table cell</td>
-          <td>Table cell</td>
-          <td>Table cell</td>
-          <td>Table cell</td>
-          <td>Table cell</td>
-        </tr>
+        {cryptoList.map(crypto => {
+          return (
+          <tr>
+              <td>{crypto.name}</td>
+              <td>{crypto.coin}</td>
+              <td>Actual price</td>
+              <td>{crypto.type}</td>
+              <td>Market cap</td>
+          </tr>
+          );
+        })}
       </tbody>
     </Table>
   );
