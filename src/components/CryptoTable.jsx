@@ -1,6 +1,7 @@
-import React, { useEffect, useState, Button } from "react";
+import React, { useEffect, useState } from "react";
 import { Table } from "reactstrap";
 import axios from "axios";
+import { Button } from "reactstrap";
 
 let coinCeckoBaseUrl = "https://api.coingecko.com/api/v3/simple/price?ids=";
 const instance = axios.create({ baseURL: "http://localhost:5000/" });
@@ -23,8 +24,8 @@ const CryptoTable = props => {
     fetchData();
   }, []);
 
-  // Actualy just update BTC actual price with actual coingeck price
-  // on click button
+  // Actualy just update actual price with actual coingeck price
+  // on click button & database price
   async function updateAllAcutalPriceInDatabase(coinPrice, cryptoId) {
     try {
       const cryptoList = await instance.post(`/cryptolist`, {
@@ -32,6 +33,16 @@ const CryptoTable = props => {
         actualPrice: coinPrice
       });
     } catch (err) {}
+  }
+
+  // Delete works only in state
+  async function deleteCoin(id) {
+    let newArray = cryptos;
+    newArray = newArray.filter(function(item) {
+      console.log(newArray);
+      return item.id !== id;
+    });
+    setCryptos(newArray);
   }
 
   async function retrieveCoinPrice() {
@@ -72,10 +83,6 @@ const CryptoTable = props => {
               updateAllAcutalPriceInDatabase(coinPrice, cryptos[index].id);
               break;
           }
-          for (const property in crypto) {
-            // console.log(`${property}: ${crypto[property]}`);
-            //  console.log(`${property}: ${object[property]}`);
-          }
         } catch (err) {
           console.log(err);
         }
@@ -93,6 +100,7 @@ const CryptoTable = props => {
             <th>Actual Price</th>
             <th>Type</th>
             <th>Market cap</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -104,11 +112,18 @@ const CryptoTable = props => {
                 <td>{crypto.actualPrice}</td>
                 <td>{crypto.type}</td>
                 <td>Market cap</td>
+                <td>
+                  <Button onClick={() => deleteCoin(crypto.id)} color="warning">
+                    Delete
+                  </Button>
+                </td>
               </tr>
             );
           })}
         </tbody>
-        <button onClick={retrieveCoinPrice}> update price</button>
+        <Button onClick={() => retrieveCoinPrice()} color="primary">
+          Update all price
+        </Button>
       </Table>
     );
   } else {
