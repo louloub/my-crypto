@@ -1,7 +1,14 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Table } from "reactstrap";
+import axios from "axios";
 
-const Example = props => {
+const CryptoList = props => {
+  const [cryptoList, setCrytpoList] = useState([]);
+
+  useEffect(() => {
+    axios.get(`/cryptolist`).then(res => setCrytpoList(res.data[0]));
+  }, []);
+
   return (
     <Table responsive>
       <thead>
@@ -44,4 +51,4 @@ const Example = props => {
   );
 };
 
-export default Example;
+export default CryptoList;
