@@ -1,6 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { Table } from "reactstrap";
 import axios from "axios";
+
+import CryptoContext from "../context/CryptoContext";
+import CryptoTable from "./CryptoTable";
 
 const instance = axios.create({ baseURL: "http://localhost:5000/" });
 
@@ -16,30 +19,9 @@ const CryptoList = props => {
   }, []);
 
   return (
-    <Table responsive>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Coin</th>
-          <th>Actual Price</th>
-          <th>Type</th>
-          <th>Market cap</th>
-        </tr>
-      </thead>
-      <tbody>
-        {cryptoList.map(crypto => {
-          return (
-          <tr>
-              <td>{crypto.name}</td>
-              <td>{crypto.coin}</td>
-              <td>Actual price</td>
-              <td>{crypto.type}</td>
-              <td>Market cap</td>
-          </tr>
-          );
-        })}
-      </tbody>
-    </Table>
+    <CryptoContext.Provider value={cryptoList}>
+      <CryptoTable />
+    </CryptoContext.Provider>
   );
 };
 
