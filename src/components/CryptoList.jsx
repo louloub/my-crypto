@@ -9,11 +9,14 @@ const CryptoList = props => {
   const [cryptoList, setCrytpoList] = useState([]);
 
   // Retrive crypto list on database and push it on context
-  useEffect(async () => {
-    try {
-      const cryptoList = await instance.get(`/cryptolist`);
-      setCrytpoList(cryptoList.data);
-    } catch (err) {}
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const cryptoList = await instance.get(`/cryptolist`);
+        setCrytpoList(cryptoList.data);
+      } catch (err) {}
+    }
+    fetchData();
   }, []);
 
   return (

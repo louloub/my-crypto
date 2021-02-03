@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useContext } from "react";
 import { Table } from "reactstrap";
 import axios from "axios";
 
@@ -8,21 +8,38 @@ let coinCeckoBaseUrl = "https://api.coingecko.com/api/v3/simple/price?ids=";
 const CryptoTable = props => {
   const cryptos = useContext(CryptoContext);
   const setCrypto = useContext(CryptoContext);
-  
+
   async function retrieveCoinPrice() {
     cryptos.map(async crypto => {
-      const coinName = crypto.name;
-      console.log(coinName);
+      let coinPrice = "";
+      const coinName = crypto.name.toLowerCase();
       const coinCeckoFinalUrl =
-        coinCeckoBaseUrl + coinName.toLowerCase() + "&vs_currencies=USD";
-      console.log(coinCeckoFinalUrl);
+        coinCeckoBaseUrl + coinName + "&vs_currencies=USD";
       try {
+        console.log(coinCeckoFinalUrl);
         const coinInformation = await axios
           .create({ baseURL: coinCeckoFinalUrl })
           .get();
-        console.log(coinInformation);
-        const coinPrice = coinInformation.data.coinName.usd;
-        console.log(coinPrice);
+
+        switch (coinName) {
+          case "bitcoin":
+            coinPrice = coinInformation.data.bitcoin.usd;
+            setCrypto(crypto.actualPrice = coinPrice)
+            console.log(coinPrice);
+            break;
+          case "ethereum":
+            coinPrice = coinInformation.data.ethereum.usd;
+            console.log(coinPrice);
+            break;
+          case "litecoin":
+            coinPrice = coinInformation.data.litecoin.usd;
+            console.log(coinPrice);
+            break;
+        }
+        for (const property in crypto){
+            console.log(`${property}`)
+        }
+        // setCrypto()
       } catch (err) {
         console.log(err);
       }
@@ -63,7 +80,7 @@ const CryptoTable = props => {
       </Table>
     );
   } else {
-    return "rien";
+    return "no coin actually";
   }
 };
 
