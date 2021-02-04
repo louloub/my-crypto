@@ -60,7 +60,7 @@ const BinanceBalance = () => {
           </p>
         </Container>
       </Jumbotron>
-      <p>my balance = {BinanceBalance()}</p>
+      <p>My balance coming soon</p>
       <CardGroup>
         <Card>
           <CardImg
