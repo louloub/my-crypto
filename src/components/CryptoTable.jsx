@@ -19,6 +19,7 @@ const CryptoTable = props => {
         for (let i = 0; i < cryptoList.data.length; i++) {
           newList.push(cryptoList.data[i]);
         }
+        console.log("useEffect cryptoList => ",cryptoList)
         setCryptos(newList);
         retrieveCoinPrice();
       } catch (err) {}
@@ -53,8 +54,8 @@ const CryptoTable = props => {
     newArray = newArray.filter(function(item) {
       return item.id !== id;
     });
-    setCryptos(newArray);
-    deleteCryptoOnDatabase(id);
+    await setCryptos(newArray);
+    await deleteCryptoOnDatabase(id);
   }
 
   async function setStateAndDatabaseWithNewPrice(
@@ -140,7 +141,7 @@ const CryptoTable = props => {
   }
 
   // Retrieve new crypto from FLOATING BUTTON componant
-  function handleCallback(childData) {
+  async function handleCallback(childData) {
     setCryptos([...cryptos, childData])
   }
 

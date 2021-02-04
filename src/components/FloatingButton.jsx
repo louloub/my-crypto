@@ -25,15 +25,13 @@ const FloatingButton = (props) => {
   });
   const toggle = () => setModal(!modal);
   const parentCallback = props.parentCallback
-  console.log(parentCallback)
   
   const validateAddCoin = e => {
-    console.log(newCoin);
     setModal(!modal);
-    setNewCoin({ name: "", coin: "", type: "", description: "" });
+    setNewCoin({ id: "", name: "", coin: "", type: "", description: "" });
     addCryptoOnDatabase()
     // Send to CRYPTO TABLE componant new crypto
-    props.parentCallback(newCoin)
+    parentCallback(newCoin)
   };
 
   async function addCryptoOnDatabase() {
@@ -42,7 +40,11 @@ const FloatingButton = (props) => {
       const cryptoList = await instance.post(`/cryptolist/newCrypto`, {
         newCoin
       });
-    } catch (err) {}
+      const newList = await instance.get(`/cryptolist`);
+      console.log(newList.data)
+    } catch (err) {
+      console.log(err)
+    }
   }
 
   const handleInputChange = e => {
