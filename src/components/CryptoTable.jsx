@@ -24,8 +24,7 @@ const CryptoTable = props => {
     fetchData();
   }, []);
 
-  // Actualy just update actual price with actual coingeck price
-  // on click button & database price
+  // Update new price on database
   async function updateAllAcutalPriceInDatabase(coinPrice, cryptoId) {
     try {
       const cryptoList = await instance.post(`/cryptolist`, {
@@ -45,6 +44,18 @@ const CryptoTable = props => {
     setCryptos(newArray);
   }
 
+  async function setStateAndDatabaseWithNewPrice(
+    setCryptos,
+    cryptos,
+    index,
+    coinPrice,
+    updateAllAcutalPriceInDatabase
+  ) {
+    await setCryptos([...cryptos, (cryptos[index].actualPrice = coinPrice)]);
+    updateAllAcutalPriceInDatabase(coinPrice, cryptos[index].id);
+  }
+
+  // Retrive online crypto price
   async function retrieveCoinPrice() {
     if (cryptos.length > 0) {
       cryptos.map(async (crypto, index) => {
@@ -56,31 +67,36 @@ const CryptoTable = props => {
           const coinInformation = await axios
             .create({ baseURL: coinCeckoFinalUrl })
             .get();
-
           switch (coinName) {
             case "bitcoin":
               coinPrice = coinInformation.data.bitcoin.usd;
-              await setCryptos([
-                ...cryptos,
-                (cryptos[index].actualPrice = coinPrice)
-              ]);
-              updateAllAcutalPriceInDatabase(coinPrice, cryptos[index].id);
+              await setStateAndDatabaseWithNewPrice(
+                setCryptos,
+                cryptos,
+                index,
+                coinPrice,
+                updateAllAcutalPriceInDatabase
+              );
               break;
             case "ethereum":
               coinPrice = coinInformation.data.ethereum.usd;
-              await setCryptos([
-                ...cryptos,
-                (cryptos[index].actualPrice = coinPrice)
-              ]);
-              updateAllAcutalPriceInDatabase(coinPrice, cryptos[index].id);
+              await setStateAndDatabaseWithNewPrice(
+                setCryptos,
+                cryptos,
+                index,
+                coinPrice,
+                updateAllAcutalPriceInDatabase
+              );
               break;
             case "litecoin":
               coinPrice = coinInformation.data.litecoin.usd;
-              await setCryptos([
-                ...cryptos,
-                (cryptos[index].actualPrice = coinPrice)
-              ]);
-              updateAllAcutalPriceInDatabase(coinPrice, cryptos[index].id);
+              await setStateAndDatabaseWithNewPrice(
+                setCryptos,
+                cryptos,
+                index,
+                coinPrice,
+                updateAllAcutalPriceInDatabase
+              );
               break;
           }
         } catch (err) {
