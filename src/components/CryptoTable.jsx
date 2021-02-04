@@ -24,7 +24,6 @@ const CryptoTable = props => {
     fetchData();
   }, []);
 
-  // Update new price on database
   async function updateAllAcutalPriceInDatabase(coinPrice, cryptoId) {
     try {
       const cryptoList = await instance.post(`/cryptolist`, {
@@ -48,11 +47,54 @@ const CryptoTable = props => {
     setCryptos,
     cryptos,
     index,
-    coinPrice,
-    updateAllAcutalPriceInDatabase
+    coinPrice
   ) {
     await setCryptos([...cryptos, (cryptos[index].actualPrice = coinPrice)]);
     updateAllAcutalPriceInDatabase(coinPrice, cryptos[index].id);
+  }
+
+  async function siwtchOnCryptoNameForUpdatePrice(
+    coinName,
+    coinPrice,
+    coinInformation,
+    setStateAndDatabaseWithNewPrice,
+    setCryptos,
+    cryptos,
+    index
+  ) {
+    switch (coinName) {
+      case "bitcoin":
+        coinPrice = coinInformation.data.bitcoin.usd;
+        console.log("btc price => ", coinPrice);
+        await setStateAndDatabaseWithNewPrice(
+          setCryptos,
+          cryptos,
+          index,
+          coinPrice
+        );
+        break;
+      case "ethereum":
+        coinPrice = coinInformation.data.ethereum.usd;
+        console.log("eth price => ", coinPrice);
+        await setStateAndDatabaseWithNewPrice(
+          setCryptos,
+          cryptos,
+          index,
+          coinPrice
+        );
+        break;
+      case "litecoin":
+        coinPrice = coinInformation.data.litecoin.usd;
+        console.log("ltc price => ", coinPrice);
+        await setStateAndDatabaseWithNewPrice(
+          setCryptos,
+          cryptos,
+          index,
+          coinPrice
+        );
+        break;
+    }
+    return coinPrice;
   }
 
   // Retrive online crypto price
@@ -67,38 +109,15 @@ const CryptoTable = props => {
           const coinInformation = await axios
             .create({ baseURL: coinCeckoFinalUrl })
             .get();
-          switch (coinName) {
-            case "bitcoin":
-              coinPrice = coinInformation.data.bitcoin.usd;
-              await setStateAndDatabaseWithNewPrice(
-                setCryptos,
-                cryptos,
-                index,
-                coinPrice,
-                updateAllAcutalPriceInDatabase
-              );
-              break;
-            case "ethereum":
-              coinPrice = coinInformation.data.ethereum.usd;
-              await setStateAndDatabaseWithNewPrice(
-                setCryptos,
-                cryptos,
-                index,
-                coinPrice,
-                updateAllAcutalPriceInDatabase
-              );
-              break;
-            case "litecoin":
-              coinPrice = coinInformation.data.litecoin.usd;
-              await setStateAndDatabaseWithNewPrice(
-                setCryptos,
-                cryptos,
-                index,
-                coinPrice,
-                updateAllAcutalPriceInDatabase
-              );
-              break;
-          }
+          coinPrice = await siwtchOnCryptoNameForUpdatePrice(
+            coinName,
+            coinPrice,
+            coinInformation,
+            setStateAndDatabaseWithNewPrice,
+            setCryptos,
+            cryptos,
+            index
+          );
         } catch (err) {
           console.log(err);
         }
@@ -148,3 +167,4 @@ const CryptoTable = props => {
 };
 
 export default CryptoTable;
+
