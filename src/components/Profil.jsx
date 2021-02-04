@@ -12,43 +12,70 @@ import {
   CardBody
 } from "reactstrap";
 
-import sha256 from 'crypto-js/sha256';
-import hmacSHA512 from 'crypto-js/hmac-sha512';
-import Base64 from 'crypto-js/enc-base64';
-
 const Profil = () => {
   const openTabsFromLink = newPageUrl => {
     window.open(newPageUrl, "_blank");
   };
 
-const BinanceBalance = () => {
-  var brul = 'https://api.binance.com';
-  var endPoint = '/api/v3/account';
-  var dataQueryString = 'recvWindows-200000&timestamp=' +Date.now();
-  var binancekey = 'boDPTh2Rp4IryiuISqsT9pB9yOut13MtEI6QUpZgu16ZC0pDrR8Pl9nEDtYVH1BR'
-  var binancekeys = 'F2RZ0YIeOHotfduwCWxXPJ1dyqF9rZrkuPm0ww2G7rrCVWxkB8wh6sc1pU2NA5Ls'
-  var keys = {
-    'akey' : binancekey,
-    'skey' : binancekeys
-  }
-  // var signature = ;
-  var signature = hmacSHA512(dataQueryString,keys['skey']).toString(Base64);
-  // var hashInBase64 = CryptoJS.enc.Base64.stringify(hash);
-  // document.write(hashInBase64);
-  var ourRequest = new XMLHttpRequest();
-  var url = brul + endPoint + '?' + dataQueryString + '&signature=' +signature;
+  const BinanceBalance = () => {
+    const crypto = require("crypto");
+    const query_string = "timestamp=1578963600000";
+    const apiSecret =
+      "vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A";
 
-  ourRequest.open('GET', url, true);
-  ourRequest.setRequestHeader('X-MBX-APIKEY', keys['akey']);
-  ourRequest.onload = function(){
-    let ourData = JSON.parse(ourRequest.responseText);
-    console.log(ourData)
-  }
-  ourRequest.send();
+    function signature(query_string) {
+      return crypto
+        .createHmac("sha256", apiSecret)
+        .update(query_string)
+        .digest("hex");
+    }
 
-  console.log(url)
-  return <p>biannce </p>
-}
+    console.log("hashing the string: ");
+    console.log(query_string);
+    console.log("and return:");
+    console.log(signature(query_string));
+
+    console.log("\n");
+    var brul = "https://api.binance.com";
+    var endPoint = "/api/v3/account";
+    var signature = signature(query_string);
+    var ourRequest = new XMLHttpRequest();
+    var url = brul + endPoint + "?" + signature;
+    ourRequest.open("GET", url, true);
+    ourRequest.setRequestHeader("X-MBX-APIKEY",signature);
+
+    ourRequest.onload = function() {
+      let ourData = JSON.parse(ourRequest.responseText);
+      console.log(ourData);
+    };
+    ourRequest.send();
+
+    // var brul = 'https://api.binance.com';
+    // var endPoint = '/api/v3/account';
+    // var dataQueryString = 'recvWindow=60000&timestamp=' +Date.now();
+    // var binancekey = 'boDPTh2Rp4IryiuISqsT9pB9yOut13MtEI6QUpZgu16ZC0pDrR8Pl9nEDtYVH1BR'
+    // var binancekeys = 'F2RZ0YIeOHotfduwCWxXPJ1dyqF9rZrkuPm0ww2G7rrCVWxkB8wh6sc1pU2NA5Ls'
+    // var keys = {
+    //   'akey' : binancekey,
+    //   'skey' : binancekeys
+    // }
+    // var signature = hmacSHA512(dataQueryString,keys['skey']).toString(Base64);
+    // console.log("dataQueryString => " ,dataQueryString)
+    // console.log("signature => " ,signature)
+    // var ourRequest = new XMLHttpRequest();
+    // var url = brul + endPoint + '?' + dataQueryString + '&signature=' +signature;
+
+    // ourRequest.open('GET', url, true);
+    // ourRequest.setRequestHeader('X-MBX-APIKEY', keys['akey']);
+    // ourRequest.onload = function(){
+    //   let ourData = JSON.parse(ourRequest.responseText);
+    //   console.log(ourData)
+    // }
+    // ourRequest.send();
+
+    console.log();
+    return <p>biance </p>;
+  };
 
   return (
     <div>
