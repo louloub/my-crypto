@@ -33,6 +33,14 @@ const CryptoTable = props => {
     } catch (err) {}
   }
 
+  async function deleteCryptoOnDatabase(cryptoId) {
+    try {
+      const cryptoList = await instance.delete(`/cryptolist/${cryptoId}`);
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
   // Delete works only in state
   async function deleteCoin(id) {
     let newArray = cryptos;
@@ -41,6 +49,7 @@ const CryptoTable = props => {
       return item.id !== id;
     });
     setCryptos(newArray);
+    deleteCryptoOnDatabase(id);
   }
 
   async function setStateAndDatabaseWithNewPrice(
@@ -167,4 +176,3 @@ const CryptoTable = props => {
 };
 
 export default CryptoTable;
-

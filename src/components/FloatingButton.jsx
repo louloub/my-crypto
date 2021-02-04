@@ -16,17 +16,42 @@ import {
   Form,
   FormGroup
 } from "reactstrap";
-import CryptoTable from "./CryptoTable"
+import CryptoTable from "./CryptoTable";
+import axios from "axios";
+
+const instance = axios.create({ baseURL: "http://localhost:5000/" });
 
 const FloatingButton = () => {
   const [modal, setModal] = useState(false);
-  const [unmountOnClose, setUnmountOnClose] = useState(true);
-  const [newCoin, setNewCoin] = useState({name: "", coin: "", type: "", description: ""})
+  const [unmountOnClose, setUnmountOnClose] = useState(false);
+  const [newCoin, setNewCoin] = useState({
+    name: "",
+    coin: "",
+    type: "",
+    description: ""
+  });
   const toggle = () => setModal(!modal);
 
-  const validateAddCoin = (e) => {
-    console.log(e.target)
+  const validateAddCoin = e => {
+    console.log(newCoin);
+    setModal(!modal);
+    setNewCoin({ name: "", coin: "", type: "", description: "" });
+    addCryptoOnDatabase()
+  };
+
+  async function addCryptoOnDatabase() {
+    try {
+      const cryptoList = await instance.post(`/cryptolist/newCrypto`, {
+        newCoin
+      });
+    } catch (err) {}
   }
+
+  const handleInputChange = e => {
+    console.log("e => ", e.target.value);
+    const { name, value } = e.target;
+    setNewCoin({ ...newCoin, [name]: value });
+  };
 
   return (
     <Container>
@@ -37,13 +62,37 @@ const FloatingButton = () => {
         <ModalHeader toggle={toggle}>Add crypto to dahsboard </ModalHeader>
         <ModalBody>
           Name :
-          <Input type="textarea" placeholder="Write coin name " rows={1} />
+          <Input
+            name="name"
+            onChange={handleInputChange}
+            value={newCoin.name}
+            type="textarea"
+            placeholder="Write coin name "
+            rows={1}
+          />
           Coin :
-          <Input type="textarea" placeholder="Write coin slug" rows={1} />
+          <Input
+            name="coin"
+            onChange={handleInputChange}
+            value={newCoin.coin}
+            type="textarea"
+            placeholder="Write coin slug"
+            rows={1}
+          />
           Type :
-          <Input type="textarea" placeholder="Write coin type" rows={1} />
+          <Input
+            name="type"
+            onChange={handleInputChange}
+            value={newCoin.type}
+            type="textarea"
+            placeholder="Write coin type"
+            rows={1}
+          />
           Description :
           <Input
+            name="description"
+            onChange={handleInputChange}
+            value={newCoin.description}
             type="textarea"
             placeholder="Write coin description"
             rows={1}
