@@ -1,4 +1,4 @@
-import React, { Component, useState } from "react";
+import React, { Component, useState, useContext } from "react";
 import {
   Container,
   MyFloatingButton,
@@ -18,10 +18,12 @@ import {
 } from "reactstrap";
 import CryptoTable from "./CryptoTable";
 import axios from "axios";
+import { CryptoContext } from "../context/CryptoContext"
 
 const instance = axios.create({ baseURL: "http://localhost:5000/" });
 
 const FloatingButton = () => {
+  const crypto = useContext(CryptoContext)
   const [modal, setModal] = useState(false);
   const [unmountOnClose, setUnmountOnClose] = useState(false);
   const [newCoin, setNewCoin] = useState({
@@ -41,6 +43,7 @@ const FloatingButton = () => {
 
   async function addCryptoOnDatabase() {
     try {
+      // Add crypto in database
       const cryptoList = await instance.post(`/cryptolist/newCrypto`, {
         newCoin
       });
@@ -48,7 +51,6 @@ const FloatingButton = () => {
   }
 
   const handleInputChange = e => {
-    console.log("e => ", e.target.value);
     const { name, value } = e.target;
     setNewCoin({ ...newCoin, [name]: value });
   };

@@ -12,6 +12,7 @@ const CryptoTable = props => {
   useEffect(() => {
     async function fetchData() {
       try {
+        // Retrive list from database and update state with it
         const cryptoList = await instance.get(`/cryptolist`);
         let newList = [];
         for (let i = 0; i < cryptoList.data.length; i++) {
@@ -26,15 +27,20 @@ const CryptoTable = props => {
 
   async function updateAllAcutalPriceInDatabase(coinPrice, cryptoId) {
     try {
+      // Update all crypto price, retrieve new list and set state with it
       const cryptoList = await instance.post(`/cryptolist`, {
         id: cryptoId,
         actualPrice: coinPrice
       });
+      const newList = await instance.get(`/cryptolist`);
+      setCryptos(newList.data);
+      console.log("newList => ", newList.data);
     } catch (err) {}
   }
 
   async function deleteCryptoOnDatabase(cryptoId) {
     try {
+      // Delete crypto in database  
       const cryptoList = await instance.delete(`/cryptolist/${cryptoId}`);
     } catch (err) {
       console.log(err);
@@ -71,6 +77,7 @@ const CryptoTable = props => {
     cryptos,
     index
   ) {
+    // FUNCTION pour remplacer switch
     switch (coinName) {
       case "bitcoin":
         coinPrice = coinInformation.data.bitcoin.usd;
@@ -109,7 +116,8 @@ const CryptoTable = props => {
   // Retrive online crypto price
   async function retrieveCoinPrice() {
     if (cryptos.length > 0) {
-      cryptos.map(async (crypto, index) => {
+      // TODO : USE FOR EACH
+      cryptos.forEach(async (crypto, index) => {
         try {
           let coinPrice = "";
           const coinName = crypto.name.toLowerCase();
