@@ -1,29 +1,20 @@
-import React, { Component, useState, useContext } from "react";
+import React, { useState } from "react";
 import {
-  Container,
-  MyFloatingButton,
-  Link
+  Container
 } from "react-floating-action-button";
-import AddCrypto from "../components/AddCrypto";
 import {
   Button,
   Modal,
   ModalHeader,
   ModalBody,
   ModalFooter,
-  Input,
-  Label,
-  Form,
-  FormGroup
+  Input
 } from "reactstrap";
-import CryptoTable from "./CryptoTable";
 import axios from "axios";
-import { CryptoContext } from "../context/CryptoContext"
 
 const instance = axios.create({ baseURL: "http://localhost:5000/" });
 
-const FloatingButton = () => {
-  const crypto = useContext(CryptoContext)
+const FloatingButton = (props) => {
   const [modal, setModal] = useState(false);
   const [unmountOnClose, setUnmountOnClose] = useState(false);
   const [newCoin, setNewCoin] = useState({
@@ -33,12 +24,16 @@ const FloatingButton = () => {
     description: ""
   });
   const toggle = () => setModal(!modal);
-
+  const parentCallback = props.parentCallback
+  console.log(parentCallback)
+  
   const validateAddCoin = e => {
     console.log(newCoin);
     setModal(!modal);
     setNewCoin({ name: "", coin: "", type: "", description: "" });
     addCryptoOnDatabase()
+    // Send to CRYPTO TABLE componant new crypto
+    props.parentCallback(newCoin)
   };
 
   async function addCryptoOnDatabase() {

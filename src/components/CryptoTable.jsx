@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Table } from "reactstrap";
 import axios from "axios";
 import { Button } from "reactstrap";
+import FloatingButton from "./FloatingButton";
 
 let coinCeckoBaseUrl = "https://api.coingecko.com/api/v3/simple/price?ids=";
 const instance = axios.create({ baseURL: "http://localhost:5000/" });
@@ -34,13 +35,12 @@ const CryptoTable = props => {
       });
       const newList = await instance.get(`/cryptolist`);
       setCryptos(newList.data);
-      console.log("newList => ", newList.data);
     } catch (err) {}
   }
 
   async function deleteCryptoOnDatabase(cryptoId) {
     try {
-      // Delete crypto in database  
+      // Delete crypto in database
       const cryptoList = await instance.delete(`/cryptolist/${cryptoId}`);
     } catch (err) {
       console.log(err);
@@ -51,7 +51,6 @@ const CryptoTable = props => {
   async function deleteCoin(id) {
     let newArray = cryptos;
     newArray = newArray.filter(function(item) {
-      console.log(newArray);
       return item.id !== id;
     });
     setCryptos(newArray);
@@ -81,7 +80,6 @@ const CryptoTable = props => {
     switch (coinName) {
       case "bitcoin":
         coinPrice = coinInformation.data.bitcoin.usd;
-        console.log("btc price => ", coinPrice);
         await setStateAndDatabaseWithNewPrice(
           setCryptos,
           cryptos,
@@ -91,7 +89,6 @@ const CryptoTable = props => {
         break;
       case "ethereum":
         coinPrice = coinInformation.data.ethereum.usd;
-        console.log("eth price => ", coinPrice);
         await setStateAndDatabaseWithNewPrice(
           setCryptos,
           cryptos,
@@ -101,7 +98,6 @@ const CryptoTable = props => {
         break;
       case "litecoin":
         coinPrice = coinInformation.data.litecoin.usd;
-        console.log("ltc price => ", coinPrice);
         await setStateAndDatabaseWithNewPrice(
           setCryptos,
           cryptos,
@@ -110,6 +106,7 @@ const CryptoTable = props => {
         );
         break;
     }
+
     return coinPrice;
   }
 
@@ -140,6 +137,11 @@ const CryptoTable = props => {
         }
       });
     }
+  }
+
+  // Retrieve new crypto from FLOATING BUTTON componant
+  function handleCallback(childData) {
+    setCryptos([...cryptos, childData])
   }
 
   if (cryptos != undefined) {
@@ -176,6 +178,7 @@ const CryptoTable = props => {
         <Button onClick={() => retrieveCoinPrice()} color="primary">
           Update all price
         </Button>
+        <FloatingButton parentCallback={handleCallback} />
       </Table>
     );
   } else {
