@@ -5,6 +5,10 @@ import { Button } from "reactstrap";
 import FloatingButton from "./FloatingButton";
 
 let coinCeckoBaseUrl = "https://api.coingecko.com/api/v3/simple/price?ids=";
+let coinGeckoBaseUrlMarketCap =
+  "https://api.coingecko.com/api/v3/coins/markets?vs_currency=USD&ids=";
+let coinGeckoEndUrlMarketCap =
+  "&order=market_cap_desc&per_page=100&page=1&sparkline=false";
 const instance = axios.create({ baseURL: "http://localhost:5000/" });
 
 const CryptoTable = props => {
@@ -18,8 +22,12 @@ const CryptoTable = props => {
         let newList = [];
         for (let i = 0; i < cryptoList.data.length; i++) {
           newList.push(cryptoList.data[i]);
+          // If coin have no price, retrive it online
+          if (cryptoList.data[i].actualPrice === null) {
+            console.log(cryptoList.data[i].name);
+          }
         }
-        console.log("useEffect cryptoList => ",cryptoList)
+        console.log("useEffect cryptoList => ", cryptoList);
         setCryptos(newList);
         retrieveCoinPrice();
       } catch (err) {}
@@ -77,53 +85,36 @@ const CryptoTable = props => {
     cryptos,
     index
   ) {
-    // FUNCTION pour remplacer switch
-    switch (coinName) {
-      case "bitcoin":
-        coinPrice = coinInformation.data.bitcoin.usd;
-        await setStateAndDatabaseWithNewPrice(
-          setCryptos,
-          cryptos,
-          index,
-          coinPrice
-        );
-        break;
-      case "ethereum":
-        coinPrice = coinInformation.data.ethereum.usd;
-        await setStateAndDatabaseWithNewPrice(
-          setCryptos,
-          cryptos,
-          index,
-          coinPrice
-        );
-        break;
-      case "litecoin":
-        coinPrice = coinInformation.data.litecoin.usd;
-        await setStateAndDatabaseWithNewPrice(
-          setCryptos,
-          cryptos,
-          index,
-          coinPrice
-        );
-        break;
-    }
-
+    coinPrice = coinInformation.data[coinName].usd;
+    console.log(coinPrice);
+    console.log(coinInformation);
+    await setStateAndDatabaseWithNewPrice(
+      setCryptos,
+      cryptos,
+      index,
+      coinPrice
+    );
     return coinPrice;
   }
 
-  // Retrive online crypto price
+  // Retrieve online crypto price
   async function retrieveCoinPrice() {
     if (cryptos.length > 0) {
-      // TODO : USE FOR EACH
       cryptos.forEach(async (crypto, index) => {
         try {
           let coinPrice = "";
+          let coinMarketCap = "";
+
           const coinName = crypto.name.toLowerCase();
+
+          // For online price
           const coinCeckoFinalUrl =
             coinCeckoBaseUrl + coinName + "&vs_currencies=USD";
+
           const coinInformation = await axios
             .create({ baseURL: coinCeckoFinalUrl })
             .get();
+            
           coinPrice = await siwtchOnCryptoNameForUpdatePrice(
             coinName,
             coinPrice,
@@ -142,7 +133,7 @@ const CryptoTable = props => {
 
   // Retrieve new crypto from FLOATING BUTTON componant
   async function handleCallback(childData) {
-    setCryptos([...cryptos, childData])
+    setCryptos([...cryptos, childData]);
   }
 
   if (cryptos != undefined) {
@@ -177,7 +168,7 @@ const CryptoTable = props => {
           })}
         </tbody>
         <Button onClick={() => retrieveCoinPrice()} color="primary">
-          Update all price
+          Update data
         </Button>
         <FloatingButton parentCallback={handleCallback} />
       </Table>
