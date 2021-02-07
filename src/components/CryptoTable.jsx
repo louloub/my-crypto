@@ -4,11 +4,11 @@ import axios from "axios";
 import { Button } from "reactstrap";
 import FloatingButton from "./FloatingButton";
 
-let coinCeckoBaseUrl = "https://api.coingecko.com/api/v3/simple/price?ids=";
-let coinGeckoBaseUrlMarketCap =
+let coinCeckoBaseUrl =
   "https://api.coingecko.com/api/v3/coins/markets?vs_currency=USD&ids=";
-let coinGeckoEndUrlMarketCap =
+let coinCeckoBaseUrlEnd =
   "&order=market_cap_desc&per_page=100&page=1&sparkline=false";
+
 const instance = axios.create({ baseURL: "http://localhost:5000/" });
 
 const CryptoTable = props => {
@@ -18,16 +18,17 @@ const CryptoTable = props => {
     async function fetchData() {
       try {
         // Retrive list from database and update state with it
-        const cryptoList = await instance.get(`/cryptolist`);
+        const cryptoList = await instance.get(`/cryptoList`);
         let newList = [];
         for (let i = 0; i < cryptoList.data.length; i++) {
           newList.push(cryptoList.data[i]);
           // If coin have no price, retrive it online
           if (cryptoList.data[i].actualPrice === null) {
             console.log(cryptoList.data[i].name);
+            console.log(cryptoList.data[i].marketCap);
+            retrieveCoinPrice();
           }
         }
-        console.log("useEffect cryptoList => ", cryptoList);
         setCryptos(newList);
         retrieveCoinPrice();
       } catch (err) {}
@@ -37,12 +38,28 @@ const CryptoTable = props => {
 
   async function updateAllAcutalPriceInDatabase(coinPrice, cryptoId) {
     try {
+      console.log("coinPrice => ", coinPrice);
+      console.log("cryptoId => ", cryptoId);
       // Update all crypto price, retrieve new list and set state with it
-      const cryptoList = await instance.post(`/cryptolist`, {
+      const cryptoList = await instance.post(`/cryptoListPrice`, {
         id: cryptoId,
         actualPrice: coinPrice
       });
+      console.log("cryptoList => ", cryptoList);
       const newList = await instance.get(`/cryptolist`);
+      setCryptos(newList.data);
+    } catch (err) {}
+  }
+
+  async function updateAllAcutalMarketCapInDatabase(coinMarketCap, cryptoId) {
+    try {
+      console.log("FRONT cryptoId ==> ", cryptoId);
+      // Update all crypto price, retrieve new list and set state with it
+      const cryptoList = await instance.post(`/cryptoListMarketCap`, {
+        id: cryptoId,
+        marketCap: coinMarketCap
+      });
+      const newList = await instance.get(`/cryptoList`);
       setCryptos(newList.data);
     } catch (err) {}
   }
@@ -66,35 +83,47 @@ const CryptoTable = props => {
     await deleteCryptoOnDatabase(id);
   }
 
-  async function setStateAndDatabaseWithNewPrice(
+  async function setStateAndDatabaseWithNewData(
     setCryptos,
     cryptos,
     index,
-    coinPrice
+    coinPrice,
+    coinMarketCap
   ) {
+    console.log("coinPrice ==> ", coinPrice);
+    console.log("cryptos[index].actualPrice ==> ", cryptos[index].actualPrice);
+    console.log("cryptos[index].name ==> ", cryptos[index].name);
+
     await setCryptos([...cryptos, (cryptos[index].actualPrice = coinPrice)]);
-    updateAllAcutalPriceInDatabase(coinPrice, cryptos[index].id);
+    await setCryptos([...cryptos, (cryptos[index].marketCap = coinMarketCap)]);
+    console.log(
+      "cryptos[index].actualPrice 2 ==> ",
+      cryptos[index].actualPrice
+    );
+
+    await updateAllAcutalPriceInDatabase(coinPrice, cryptos[index].id);
+    await updateAllAcutalMarketCapInDatabase(coinMarketCap, cryptos[index].id);
   }
 
-  async function siwtchOnCryptoNameForUpdatePrice(
+  async function siwtchOnCryptoNameForUpdate(
     coinName,
     coinPrice,
     coinInformation,
-    setStateAndDatabaseWithNewPrice,
+    setStateAndDatabaseWithNewData,
     setCryptos,
     cryptos,
     index
   ) {
-    coinPrice = coinInformation.data[coinName].usd;
-    console.log(coinPrice);
-    console.log(coinInformation);
-    await setStateAndDatabaseWithNewPrice(
+    coinPrice = coinInformation.data[0].current_price;
+    let coinMarketCap = coinInformation.data[0].market_cap;
+
+    await setStateAndDatabaseWithNewData(
       setCryptos,
       cryptos,
       index,
-      coinPrice
+      coinPrice,
+      coinMarketCap
     );
-    return coinPrice;
   }
 
   // Retrieve online crypto price
@@ -103,23 +132,22 @@ const CryptoTable = props => {
       cryptos.forEach(async (crypto, index) => {
         try {
           let coinPrice = "";
-          let coinMarketCap = "";
 
           const coinName = crypto.name.toLowerCase();
 
           // For online price
           const coinCeckoFinalUrl =
-            coinCeckoBaseUrl + coinName + "&vs_currencies=USD";
+            coinCeckoBaseUrl + coinName + coinCeckoBaseUrlEnd;
 
           const coinInformation = await axios
             .create({ baseURL: coinCeckoFinalUrl })
             .get();
-            
-          coinPrice = await siwtchOnCryptoNameForUpdatePrice(
+
+          await siwtchOnCryptoNameForUpdate(
             coinName,
             coinPrice,
             coinInformation,
-            setStateAndDatabaseWithNewPrice,
+            setStateAndDatabaseWithNewData,
             setCryptos,
             cryptos,
             index
@@ -157,7 +185,7 @@ const CryptoTable = props => {
                 <td>{crypto.coin}</td>
                 <td>{crypto.actualPrice}</td>
                 <td>{crypto.type}</td>
-                <td>Market cap</td>
+                <td>{crypto.marketCap} $</td>
                 <td>
                   <Button onClick={() => deleteCoin(crypto.id)} color="warning">
                     Delete
