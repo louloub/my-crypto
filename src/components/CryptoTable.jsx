@@ -15,6 +15,7 @@ const CryptoTable = props => {
   const [cryptos, setCryptos] = useState([]);
 
   useEffect(() => {
+    console.log("in use effect");
     async function fetchData() {
       try {
         // Retrive list from database and update state with it
@@ -90,6 +91,7 @@ const CryptoTable = props => {
     coinPrice,
     coinMarketCap
   ) {
+    console.log("cryptos ==> ", cryptos);
     console.log("coinPrice ==> ", coinPrice);
     console.log("cryptos[index].actualPrice ==> ", cryptos[index].actualPrice);
     console.log("cryptos[index].name ==> ", cryptos[index].name);
@@ -128,11 +130,11 @@ const CryptoTable = props => {
 
   // Retrieve online crypto price
   async function retrieveCoinPrice() {
+    console.log("retrieveCoinPrice cryptos => ", cryptos);
     if (cryptos.length > 0) {
       cryptos.forEach(async (crypto, index) => {
         try {
           let coinPrice = "";
-
           const coinName = crypto.name.toLowerCase();
 
           // For online price
@@ -161,12 +163,68 @@ const CryptoTable = props => {
 
   // Retrieve new crypto from FLOATING BUTTON componant
   async function handleCallback(childData) {
-    setCryptos([...cryptos, childData]);
+    let newArray = cryptos;
+    let newCoin = childData;
+    newArray.push(childData);
+    // setCryptos(newArray);
+    console.log("cryptos ==> ", cryptos);
+    // await retrieveCoinPrice()
+    console.log("newCoin ==> ", newCoin);
+
+    async function fetchData() {
+      console.log("in fetchdata");
+      try {
+        // Retrive list from database and update state with it
+        console.log("FRONT in try");
+
+        const addCoinInDatabse = await instance.post(`/cryptolist/newCrypto`, {
+          newCoin
+        });
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    async function fetcData2() {
+      console.log("FRONT in try 3");
+      const cryptoList = await instance.get(`/cryptoList`);
+      let newList = [];
+      for (let i = 0; i < cryptoList.data.length; i++) {
+        console.log("FRONT in FOR");
+        newList.push(cryptoList.data[i]);
+        // If coin have no price, retrive it online
+        if (cryptoList.data[i].actualPrice === null) {
+          console.log(cryptoList.data[i].name);
+          console.log(cryptoList.data[i].marketCap);
+          retrieveCoinPrice();
+        }
+      }
+      setCryptos(newList);
+      retrieveCoinPrice();
+      console.log("FRONT in end try");
+    }
+
+    fetchData();
+    fetcData2();
+
+    // try {
+    //   // Add new crypto in database
+    //   instance.post(`/cryptolist/newCrypto`, {
+    //     newCoin
+    //   }).then(function (response) {
+    //     console.log("response ==> ",response);
+    //   })
+    //   // console.log("cryptoList ==> ", cryptoList.data);
+    // } catch (err) {
+    //   console.log(err);
+    // }
+    // Add new crytpo in state
+    //setCryptos(newArray);
   }
 
   if (cryptos != undefined) {
     return (
-      <Table responsive>
+      <Table responsive hover>
         <thead>
           <tr>
             <th>Name</th>

@@ -29,7 +29,7 @@ const FloatingButton = (props) => {
   const validateAddCoin = e => {
     setModal(!modal);
     setNewCoin({ id: "", name: "", coin: "", type: "", description: "" });
-    addCryptoOnDatabase()
+    // addCryptoOnDatabase()
     // Send to CRYPTO TABLE componant new crypto
     parentCallback(newCoin)
   };
