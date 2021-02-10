@@ -12,44 +12,81 @@ let coinCeckoBaseUrlEnd =
 
 const instance = axios.create({ baseURL: "http://localhost:5000/" });
 
+// 1 - useEffect retrieve list on database
+// 2 - set list on context with database
+// 3 - can add crypto
+// 4 - can delete crypto
+// 5 - can update crypto price online
+// 6 - can udpate crypto marketcap online
+// 7 - when i add crypto his price and market cap are update with online
+
 const CryptoTable = props => {
-  const [cryptos, setCryptos] = useState([]);
   const cryptoContext = useContext(CryptoContext);
 
   useEffect(() => {
-    console.log("--- use effect --- in use effect");
-    // ADD OBJECT IN CONTEXT LIST WORKS DOWN LINE
-    // cryptoContext.setCryptoListContext(cryptoContext.cryptoListContext.push({"a":"b"}))
-    // THIS UP LINE WORKS
+    console.log("--- use effect ---");
+    let cryptoList = [];
+    let newList = [];
 
-    async function fetchData() {
+    async function retrieveDataFromDatabase() {
       try {
-        // Retrive list from database and update state with it
-        const cryptoList = await instance.get(`/cryptoList`);
-        let newList = [];
-        for (let i = 0; i < cryptoList.data.length; i++) {
-          newList.push(cryptoList.data[i]);
-          // If coin have no price, retrive it online
-          if (cryptoList.data[i].actualPrice === null) {
-            console.log(cryptoList.data[i].name);
-            console.log(cryptoList.data[i].marketCap);
-            // retrieveCoinPrice();
-          }
-        }
-        await cryptoContext.setCryptoListContext(newList);
-        // cryptoContext.setCryptoListContext(
-        //   cryptoContext.cryptoListContext.push({ newList })
-        // );
-        // console.log(
-        //   "cryptoContext.cryptoListContext ==> ",
-        //   cryptoContext.cryptoListContext[0].newList
-        // );
-        setCryptos(newList);
-        // retrieveCoinPrice();
-      } catch (err) {}
+        cryptoList = await instance.get(`/cryptoList`);
+        // UPDATE ALL PRICE HERE AND AFTER PUSH LIST IN CONTEXT
+        newList.push(cryptoList.data);
+        updateAllPriceFromList(newList);
+        // console.log("--- retrieveDataFromDatabase --- newlist ==> ", newList);
+        // await cryptoContext.setCryptoListContext(newList);
+      } catch (err) {
+        console.log(err);
+      }
     }
-    fetchData();
+
+    retrieveDataFromDatabase();
   }, []);
+
+  async function updateAllPriceFromList(newList) {
+    console.log("--- updateAllPriceFromList --- cryptoList ==> ", newList);
+
+    for (let i = 0; i < newList[0].length; i++) {
+      let coin = newList[0][i];
+      let name = newList[0][i].name;
+
+      // Create URL for request
+      const coinCeckoFinalUrl =
+        coinCeckoBaseUrl + name.toLowerCase() + coinCeckoBaseUrlEnd;
+
+      // Axios Request
+      const coinInformation = await axios
+        .create({ baseURL: coinCeckoFinalUrl })
+        .get();
+
+      // Update coin data in local array
+      newList[0][i].actualPrice = coinInformation.data[0].current_price;
+      newList[0][i].marketCap = coinInformation.data[0].market_cap;
+
+      // Push local array on context
+      // cryptoContext.setCryptoListContext([])
+      // cryptoContext.setCryptoListContext(newList)
+    }
+
+    // // TODO coingecko update price
+    // const coinName = name.toLowerCase();
+
+    // // Retrieve online price
+    // const coinCeckoFinalUrl = coinCeckoBaseUrl + coinName + coinCeckoBaseUrlEnd;
+
+    // const coinInformation = await axios
+    //   .create({ baseURL: coinCeckoFinalUrl })
+    //   .get();
+
+    // console.log(
+    //   "--- updateSpecificCryptoPrice / coinInformation => ",
+    //   coinInformation.data[0].current_price
+    // );
+    // return coinInformation.data[0].current_price;
+
+    await cryptoContext.setCryptoListContext(newList);
+  }
 
   // 09/02 --> im in this method, for update price of all coin in DB
   // AND AFTER THIS, UPDATE CONTEXT WITH NEW DB DATA
@@ -89,16 +126,22 @@ const CryptoTable = props => {
     } catch (err) {}
   }
 
-  async function updateAllAcutalMarketCapInDatabase(coinMarketCap, cryptoId) {
+  async function updateAllAcutalMarketCapInDatabase(
+    coinName,
+    coinMarketCap,
+    cryptoId
+  ) {
     try {
-      console.log("FRONT cryptoId ==> ", cryptoId);
+      console.log(
+        "--- updateAllAcutalMarketCapInDatabase --- cryptoId ==> ",
+        cryptoId
+      );
       // Update all crypto price, retrieve new list and set state with it
       const cryptoList = await instance.post(`/cryptoListMarketCap`, {
         id: cryptoId,
         marketCap: coinMarketCap
       });
       const newList = await instance.get(`/cryptoList`);
-      setCryptos(newList.data);
     } catch (err) {}
   }
 
@@ -113,131 +156,80 @@ const CryptoTable = props => {
 
   // Delete works only in state
   async function deleteCoin(id) {
-    let newArray = cryptos;
-    newArray = newArray.filter(function(item) {
-      return item.id !== id;
-    });
-    await setCryptos(newArray);
-    await deleteCryptoOnDatabase(id);
-  }
-
-  async function setStateAndDatabaseWithNewData(
-    setCryptos,
-    cryptos,
-    index,
-    coinPrice,
-    coinMarketCap
-  ) {
-    // console.log("cryptos ==> ", cryptos);
-    // console.log("coinPrice ==> ", coinPrice);
-    // console.log("cryptos[index].actualPrice ==> ", cryptos[index].actualPrice);
-    // console.log("cryptos[index].name ==> ", cryptos[index].name);
-
-    // await setCryptos([...cryptos, (cryptos[index].actualPrice = coinPrice)]);
-    // await setCryptos([...cryptos, (cryptos[index].marketCap = coinMarketCap)]);
-    // console.log(
-    //   "cryptos[index].actualPrice 2 ==> ",
-    //   cryptos[index].actualPrice
-    // );
-
-    await updateAllAcutalPriceInDatabase(
-      coinPrice,
-      cryptoContext.cryptoListContext[index].id
-    );
-    await updateAllAcutalMarketCapInDatabase(
-      coinMarketCap,
-      cryptoContext.cryptoListContext[index].id
-    );
-  }
-
-  async function siwtchOnCryptoNameForUpdate(
-    coinName,
-    coinPrice,
-    coinInformation,
-    setStateAndDatabaseWithNewData,
-    setCryptos,
-    cryptos,
-    index
-  ) {
-    coinPrice = coinInformation.data[0].current_price;
-    let coinMarketCap = coinInformation.data[0].market_cap;
-
-    await setStateAndDatabaseWithNewData(
-      setCryptos,
-      cryptos,
-      index,
-      coinPrice,
-      coinMarketCap
-    );
+    // let newArray = cryptos;
+    // newArray = newArray.filter(function(item) {
+    //   return item.id !== id;
+    // });
+    // await setCryptos(newArray);
+    // await deleteCryptoOnDatabase(id);
   }
 
   // Retrieve online crypto price
   async function retrieveCoinPrice() {
-    if (cryptoContext.cryptoListContext.length > 0) {
-      cryptoContext.cryptoListContext.forEach(async (crypto, index) => {
-        try {
-          let coinPrice = "";
-          const coinName = crypto.name.toLowerCase();
+    setTimeout(
+      console.log(
+        "--- retrieveCoinPrice --- cryptoContext.cryptoListContext => ",
+        cryptoContext.cryptoListContext
+      ),
+      2000
+    );
 
-          // For online price
-          const coinCeckoFinalUrl =
-            coinCeckoBaseUrl + coinName + coinCeckoBaseUrlEnd;
+    setTimeout(ifelse(), 2000);
 
-          const coinInformation = await axios
-            .create({ baseURL: coinCeckoFinalUrl })
-            .get();
+    async function ifelse() {
+      if (cryptoContext.cryptoListContext.length > 0) {
+        cryptoContext.cryptoListContext.forEach(async (crypto, index) => {
+          try {
+            let coinPrice = "";
+            const coinName = crypto.name.toLowerCase();
 
-          console.log("--- retrieveCoinPrice --- crypto => ", crypto);
-          console.log(
-            "--- retrieveCoinPrice --- index => ",
-            cryptoContext.cryptoListContext[index].id
-          );
-          await updateAllAcutalPriceInDatabase(
-            coinName,
-            coinInformation.data[0].current_price,
-            cryptoContext.cryptoListContext[index].id
-          );
+            // For online price
+            const coinCeckoFinalUrl =
+              coinCeckoBaseUrl + coinName + coinCeckoBaseUrlEnd;
 
-          await updateAllAcutalMarketCapInDatabase(
-            coinName,
-            coinInformation.data[0].market_cap,
-            cryptoContext.cryptoListContext[index].id
-          );
+            const coinInformation = await axios
+              .create({ baseURL: coinCeckoFinalUrl })
+              .get();
 
-          //   await siwtchOnCryptoNameForUpdate(
-          //     coinName,
-          //     coinPrice,
-          //     coinInformation,
-          //     setStateAndDatabaseWithNewData,
-          //     setCryptos,
-          //     cryptos,
-          //     index
-          //   );
-        } catch (err) {
-          console.log(err);
-        }
-      });
-    } else {
-      console.log("cryptoContext.cryptoListContext is empty");
+            console.log("--- retrieveCoinPrice --- crypto => ", crypto);
+            console.log(
+              "--- retrieveCoinPrice --- index => ",
+              cryptoContext.cryptoListContext[index].id
+            );
+
+            await updateAllAcutalPriceInDatabase(
+              coinName,
+              coinInformation.data[0].current_price,
+              cryptoContext.cryptoListContext[index].id
+            );
+
+            //   await updateAllAcutalMarketCapInDatabase(
+            //     coinName,
+            //     coinInformation.data[0].market_cap,
+            //     cryptoContext.cryptoListContext[index].id
+            //   );
+          } catch (err) {
+            console.log(err);
+          }
+        });
+      } else {
+        console.log("cryptoContext.cryptoListContext is empty");
+      }
     }
   }
 
   // Retrieve new crypto from FLOATING BUTTON componant
   async function handleCallback(childData) {
-    let newArray = cryptos;
+    let newArray = cryptoContext.cryptoListContext;
     let newCoin = childData;
     newArray.push(childData);
-    // setCryptos(newArray);
-    // console.log("--- handleCallback --- cryptos ==> ", cryptos);
-    // await retrieveCoinPrice()
     console.log("--- handleCallback --- newCoin ==> ", newCoin);
 
     // Post new coin on database
     async function fetchData() {
       console.log("--- fetcData --- ");
       try {
-        console.log("FRONT in try");
-        const addCoinInDatabse = await instance.post(`/cryptolist/newCrypto`, {
+        await instance.post(`/cryptolist/newCrypto`, {
           newCoin
         });
       } catch (err) {
@@ -262,19 +254,8 @@ const CryptoTable = props => {
         // If coin have no price, retrive it online
         if (cryptoList.data[i].actualPrice === null) {
           console.log("cryptoList.data[i].name => ", cryptoList.data[i].name);
-          console.log(
-            "cryptoList.data[i].marketCap => ",
-            cryptoList.data[i].marketCap
-          );
-          // setTimeout(retrieveCoinPrice(), 100);
         }
       }
-      //   await cryptoContext.setCryptoListContext(newList);
-      //   setTimeout(retrieveCoinPrice(), 100);
-      //   console.log("NEW LIST ===> ", newList);
-      //   setCryptos(newList);
-      //   retrieveCoinPrice();
-      //   console.log("FRONT in end try");
       fetchData4(newList);
     }
 
@@ -285,41 +266,26 @@ const CryptoTable = props => {
         cryptoContext.cryptoListContext
       );
       console.log("--- fetchData4 --- newList => ", newList);
-      // await cryptoContext.setCryptoListContext(newList);
       await cryptoContext.setCryptoListContext([]);
-      // setTimeout(retrieveCoinPrice, 1000);
       await cryptoContext.setCryptoListContext(newList);
-      //   await cryptoContext.cryptoListContext.push(newList)
-      // retrieveCoinPrice();
-      setTimeout(retrieveCoinPrice, 1000);
-      console.log(
-        "--- fetchData4 --- cryptoContext.cryptoListContext => ",
-        cryptoContext.cryptoListContext
+      setTimeout(
+        console.log(
+          "--- fetchData4 --- cryptoContext.cryptoListContext => ",
+          cryptoContext.cryptoListContext
+        ),
+        1000
       );
-      //   retrieveCoinPrice();
     }
 
     fetchData();
     setTimeout(fetcData2, 200);
-    // retrieveCoinPrice();
+    setTimeout(retrieveCoinPrice, 1000);
     console.log("--- END OF handleCallback ---");
-    // try {
-    //   // Add new crypto in database
-    //   instance.post(`/cryptolist/newCrypto`, {
-    //     newCoin
-    //   }).then(function (response) {
-    //     console.log("response ==> ",response);
-    //   })
-    //   // console.log("cryptoList ==> ", cryptoList.data);
-    // } catch (err) {
-    //   console.log(err);
-    // }
-    // Add new crytpo in state
-    // setCryptos(newArray);
   }
 
   if (cryptoContext.cryptoListContext != undefined) {
     async function mylog() {
+      console.log("--- in render if ---", cryptoContext.cryptoListContext[0]);
       console.log("--- in render if ---", cryptoContext.cryptoListContext);
     }
     mylog();
@@ -336,12 +302,12 @@ const CryptoTable = props => {
           </tr>
         </thead>
         <tbody>
-          {cryptoContext.cryptoListContext.map((crypto, index) => {
+          {cryptoContext.cryptoListContext[0].map((crypto, index) => {
             return (
               <tr>
                 <td>{crypto.name}</td>
                 <td>{crypto.coin}</td>
-                <td>{crypto.actualPrice}</td>
+                <td>{crypto.actualPrice} $</td>
                 <td>{crypto.type}</td>
                 <td>{crypto.marketCap} $</td>
                 <td>
