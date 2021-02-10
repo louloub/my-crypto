@@ -33,10 +33,10 @@ const CryptoTable = props => {
           if (cryptoList.data[i].actualPrice === null) {
             console.log(cryptoList.data[i].name);
             console.log(cryptoList.data[i].marketCap);
-            retrieveCoinPrice();
+            // retrieveCoinPrice();
           }
         }
-        cryptoContext.setCryptoListContext(newList);
+        await cryptoContext.setCryptoListContext(newList);
         // cryptoContext.setCryptoListContext(
         //   cryptoContext.cryptoListContext.push({ newList })
         // );
@@ -45,7 +45,7 @@ const CryptoTable = props => {
         //   cryptoContext.cryptoListContext[0].newList
         // );
         setCryptos(newList);
-        retrieveCoinPrice();
+        // retrieveCoinPrice();
       } catch (err) {}
     }
     fetchData();
@@ -54,10 +54,21 @@ const CryptoTable = props => {
   // 09/02 --> im in this method, for update price of all coin in DB
   // AND AFTER THIS, UPDATE CONTEXT WITH NEW DB DATA
   // ENJOY
-  async function updateAllAcutalPriceInDatabase(coinPrice, cryptoId) {
+  async function updateAllAcutalPriceInDatabase(coinName, coinPrice, cryptoId) {
     try {
-      console.log("--- updateAllAcutalPriceInDatabase --- coinPrice => ", coinPrice);
-      console.log("--- updateAllAcutalPriceInDatabase --- cryptoId => ", cryptoId);
+      console.log(
+        "--- updateAllAcutalPriceInDatabase --- cryptoId => ",
+        cryptoId
+      );
+      console.log(
+        "--- updateAllAcutalPriceInDatabase --- coinName => ",
+        coinName
+      );
+      console.log(
+        "--- updateAllAcutalPriceInDatabase --- coinPrice => ",
+        coinPrice
+      );
+
       // Update all crypto price, retrieve new list and set state with it
       const cryptoList = await instance.post(`/cryptoListPrice`, {
         id: cryptoId,
@@ -65,7 +76,13 @@ const CryptoTable = props => {
       });
       // rconsole.log("--- updateAllAcutalPriceInDatabase --- cryptoList => ", cryptoList);
       const newList = await instance.get(`/cryptolist`);
-      setTimeout(console.log("--- updateAllAcutalPriceInDatabase --- cryptoList2 => ", newList),100)
+      setTimeout(
+        console.log(
+          "--- updateAllAcutalPriceInDatabase --- cryptoList2 => ",
+          newList
+        ),
+        100
+      );
 
       // cryptoContext.setCryptoListContext(newList);
       // setCryptos(newList.data);
@@ -123,8 +140,14 @@ const CryptoTable = props => {
     //   cryptos[index].actualPrice
     // );
 
-    await updateAllAcutalPriceInDatabase(coinPrice, cryptoContext.cryptoListContext[index].id);
-    await updateAllAcutalMarketCapInDatabase(coinMarketCap, cryptoContext.cryptoListContext[index].id);
+    await updateAllAcutalPriceInDatabase(
+      coinPrice,
+      cryptoContext.cryptoListContext[index].id
+    );
+    await updateAllAcutalMarketCapInDatabase(
+      coinMarketCap,
+      cryptoContext.cryptoListContext[index].id
+    );
   }
 
   async function siwtchOnCryptoNameForUpdate(
@@ -150,12 +173,8 @@ const CryptoTable = props => {
 
   // Retrieve online crypto price
   async function retrieveCoinPrice() {
-    console.log(
-      "--- retrieveCoinPrice --- cryptoContext.cryptoListContext => ",
-      cryptoContext.cryptoListContext
-    );
-    if (cryptos.length > 0) {
-      cryptos.forEach(async (crypto, index) => {
+    if (cryptoContext.cryptoListContext.length > 0) {
+      cryptoContext.cryptoListContext.forEach(async (crypto, index) => {
         try {
           let coinPrice = "";
           const coinName = crypto.name.toLowerCase();
@@ -168,13 +187,21 @@ const CryptoTable = props => {
             .create({ baseURL: coinCeckoFinalUrl })
             .get();
 
-          await updateAllAcutalPriceInDatabase(
-            coinInformation.data[0].current_price,
-            cryptos[index].id
+          console.log("--- retrieveCoinPrice --- crypto => ", crypto);
+          console.log(
+            "--- retrieveCoinPrice --- index => ",
+            cryptoContext.cryptoListContext[index].id
           );
+          await updateAllAcutalPriceInDatabase(
+            coinName,
+            coinInformation.data[0].current_price,
+            cryptoContext.cryptoListContext[index].id
+          );
+
           await updateAllAcutalMarketCapInDatabase(
+            coinName,
             coinInformation.data[0].market_cap,
-            cryptos[index].id
+            cryptoContext.cryptoListContext[index].id
           );
 
           //   await siwtchOnCryptoNameForUpdate(
@@ -190,6 +217,8 @@ const CryptoTable = props => {
           console.log(err);
         }
       });
+    } else {
+      console.log("cryptoContext.cryptoListContext is empty");
     }
   }
 
@@ -224,7 +253,7 @@ const CryptoTable = props => {
       setTimeout(fetcData3(cryptoList), 200);
     }
 
-    // Set context list with new database
+    // Create new local list with database
     async function fetcData3(cryptoList) {
       let newList = [];
       for (let i = 0; i < cryptoList.data.length; i++) {
@@ -232,21 +261,48 @@ const CryptoTable = props => {
         newList.push(cryptoList.data[i]);
         // If coin have no price, retrive it online
         if (cryptoList.data[i].actualPrice === null) {
-          console.log(cryptoList.data[i].name);
-          console.log(cryptoList.data[i].marketCap);
-          setTimeout(retrieveCoinPrice(), 100);
+          console.log("cryptoList.data[i].name => ", cryptoList.data[i].name);
+          console.log(
+            "cryptoList.data[i].marketCap => ",
+            cryptoList.data[i].marketCap
+          );
+          // setTimeout(retrieveCoinPrice(), 100);
         }
       }
-      cryptoContext.setCryptoListContext(newList);
+      //   await cryptoContext.setCryptoListContext(newList);
+      //   setTimeout(retrieveCoinPrice(), 100);
       //   console.log("NEW LIST ===> ", newList);
       //   setCryptos(newList);
       //   retrieveCoinPrice();
       //   console.log("FRONT in end try");
+      fetchData4(newList);
+    }
+
+    // Push new list on context
+    async function fetchData4(newList) {
+      console.log(
+        "--- fetchData4 --- cryptoContext.cryptoListContext => ",
+        cryptoContext.cryptoListContext
+      );
+      console.log("--- fetchData4 --- newList => ", newList);
+      // await cryptoContext.setCryptoListContext(newList);
+      await cryptoContext.setCryptoListContext([]);
+      // setTimeout(retrieveCoinPrice, 1000);
+      await cryptoContext.setCryptoListContext(newList);
+      //   await cryptoContext.cryptoListContext.push(newList)
+      // retrieveCoinPrice();
+      setTimeout(retrieveCoinPrice, 1000);
+      console.log(
+        "--- fetchData4 --- cryptoContext.cryptoListContext => ",
+        cryptoContext.cryptoListContext
+      );
+      //   retrieveCoinPrice();
     }
 
     fetchData();
     setTimeout(fetcData2, 200);
-
+    // retrieveCoinPrice();
+    console.log("--- END OF handleCallback ---");
     // try {
     //   // Add new crypto in database
     //   instance.post(`/cryptolist/newCrypto`, {
@@ -259,7 +315,7 @@ const CryptoTable = props => {
     //   console.log(err);
     // }
     // Add new crytpo in state
-    //setCryptos(newArray);
+    // setCryptos(newArray);
   }
 
   if (cryptoContext.cryptoListContext != undefined) {
