@@ -2,12 +2,15 @@ import React, { createContext, useState } from "react";
 
 export const CryptoProvider = ({ children }) => {
   const [cryptoListContext, setCryptoListContext] = useState();
-
+  const [trigger, setTrigger] = useState();
+  
   return (
     <CryptoContext.Provider
       value={{
         cryptoListContext,
-        setCryptoListContext
+        setCryptoListContext,
+        trigger,
+        setTrigger
       }}
     >
       {children}

@@ -1,8 +1,5 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React from "react";
 import CryptoTable from "./CryptoTable";
-
-const instance = axios.create({ baseURL: "http://localhost:5000/" });
 
 const CryptoList = props => {
     
