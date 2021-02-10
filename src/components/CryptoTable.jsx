@@ -48,45 +48,41 @@ const CryptoTable = props => {
     };
 
     handleAsyncFunction();
-    // retrieveDataFromDatabase();
-    // console.log(
-    //   "--- retrieveDataFromDatabase --- cryptoContext.cryptoListContext",
-    //   cryptoContext.cryptoListContext[0]
-    // );
-    // saveNewDataOnDatabse();
   }, []);
 
   async function saveNewDataOnDatabse(cryptoId, coinPrice, marketCap) {
-
-    
-
-    try {
-      console.log(
-        "--- saveNewDataOnDatabse --- cryptoContext.cryptoListContext",
-        cryptoContext.cryptoListContext[0]
-      );
+    async function saveOnDatabase() {
+      console.log("--- saveOnDatabase ---");
 
       let cryptoArrayFromContext = cryptoContext.cryptoListContext[0];
       for (let i = 0; i < cryptoArrayFromContext.length; i++) {
-        console.log("cryptoArrayFromContext => ", cryptoArrayFromContext[i]);
+        console.log(cryptoArrayFromContext[i].actualPrice);
         await instance.post(`/cryptoListPrice`, {
           id: cryptoArrayFromContext[i].id,
           actualPrice: cryptoArrayFromContext[i].actualPrice,
           marketCap: cryptoArrayFromContext[i].marketCap
         });
       }
-    } catch (err) {
-      console.log("!!! ERROR !!!", err);
     }
 
-    /* 
     const handleAsyncFunction = async () => {
-      const result = await retrieveDataFromDatabase();
-      saveNewDataOnDatabse();
+      console.log("--- handleAsyncFunction 1 ---");
+
+      const time = await setTimeout(console.log("atempt", cryptoContext.cryptoListContext[0]), 1000);
+      console.log("--- handleAsyncFunction 2 ---");
+
+      const result = await saveOnDatabase();
     };
 
     handleAsyncFunction();
-    */
+
+    // try {
+    //   console.log("")
+    //   setTimeout(handleAsyncFunction(),500)
+    // } catch (err) {
+    //   console.log("!!! ERROR !!!", err);
+    //   // setTimeout(handleAsyncFunction(),500)
+    // }
   }
 
   async function updateAllContextPriceFromList(newList) {
