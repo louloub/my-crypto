@@ -52,26 +52,36 @@ const CryptoTable = props => {
 
   async function saveNewDataOnDatabse(cryptoId, coinPrice, marketCap) {
     async function saveOnDatabase() {
+        
       console.log("--- saveOnDatabase ---");
-
-      let cryptoArrayFromContext = cryptoContext.cryptoListContext[0];
-      for (let i = 0; i < cryptoArrayFromContext.length; i++) {
-        console.log(cryptoArrayFromContext[i].actualPrice);
-        await instance.post(`/cryptoListPrice`, {
-          id: cryptoArrayFromContext[i].id,
-          actualPrice: cryptoArrayFromContext[i].actualPrice,
-          marketCap: cryptoArrayFromContext[i].marketCap
-        });
+      if (cryptoContext.cryptoListContext[0]) {
+        let cryptoArrayFromContext = cryptoContext.cryptoListContext[0];
+        for (let i = 0; i < cryptoArrayFromContext.length; i++) {
+          console.log(cryptoArrayFromContext[i].actualPrice);
+          await instance.post(`/cryptoListPrice`, {
+            id: cryptoArrayFromContext[i].id,
+            actualPrice: cryptoArrayFromContext[i].actualPrice,
+            marketCap: cryptoArrayFromContext[i].marketCap
+          });
+        }
+      } else {
+        console.log("!!! cryptoContext.cryptoListContext[0] IS UNDEFINED !!!");
       }
     }
 
     const handleAsyncFunction = async () => {
       console.log("--- handleAsyncFunction 1 ---");
+      if (cryptoContext.cryptoListContext[0] !== undefined) {
+        const time = await setTimeout(
+          console.log("atempt", cryptoContext.cryptoListContext[0]),
+          1000
+        );
+        console.log("--- handleAsyncFunction 2 ---");
 
-      const time = await setTimeout(console.log("atempt", cryptoContext.cryptoListContext[0]), 1000);
-      console.log("--- handleAsyncFunction 2 ---");
-
-      const result = await saveOnDatabase();
+        const result = await saveOnDatabase();
+      } else {
+        console.log("!!! cryptoContext.cryptoListContext[0] IS UNDEFINED !!!");
+      }
     };
 
     handleAsyncFunction();
