@@ -49,7 +49,7 @@ const CryptoTable = props => {
     };
 
     handleAsyncFunction();
-  }, []);
+  }, [cryptoContext.cryptoListContext]);
 
   async function updateAllContextPriceFromList(newList) {
     for (let i = 0; i < newList[0].length; i++) {
@@ -157,7 +157,15 @@ const CryptoTable = props => {
   async function deleteCryptoOnDatabase(cryptoId) {
     try {
       // Delete crypto in database
-      const cryptoList = await instance.delete(`/cryptolist/${cryptoId}`);
+      const deleteCrytpoOnDatabase = await instance.delete(
+        `/cryptolist/${cryptoId}`
+      );
+      //   const retrieveCryptoList = await instance.get(`/cryptoList`);
+      //   console.log("retrieveCryptoList ==> ",retrieveCryptoList)
+      //   await cryptoContext.setCryptoListContext(
+      //     [...cryptoContext.cryptoListContext],
+      //     [retrieveCryptoList]
+      //   );
     } catch (err) {
       console.log(err);
     }
@@ -219,7 +227,7 @@ const CryptoTable = props => {
     async function udpateContextListPrice() {
       console.log("--- newList --- ==> ", newList);
       for (let i = 0; i < newList.length; i++) {
-        let coin = newList[i];
+        let coin = newList[i].coin;
         let name = newList[i].name;
         let cryptoId = newList[i].id;
         let coinPrice = newList[i].actualPrice;
@@ -247,61 +255,70 @@ const CryptoTable = props => {
     let newCoin = childData;
     newArray.push(childData);
     console.log("--- handleCallback --- newCoin ==> ", newCoin);
-    await cryptoContext.setCryptoListContext([...cryptoContext.cryptoListContext],childData);
-    
-    // // Post new coin on database
-    async function fetchData() {
-      console.log("--- fetcData --- ");
-      try {
-        await instance.post(`/cryptolist/newCrypto`, {
-          newCoin
-        });
-      } catch (err) {
-        console.log(err);
+    await cryptoContext.setCryptoListContext(
+      [...cryptoContext.cryptoListContext],
+      childData
+    );
+
+    let newList = cryptoContext.cryptoListContext[0];
+
+    async function udpateContextListPrice() {
+      console.log(
+        "--- handleCallback / udpateContextListPrice / newList --- ==> ",
+        newList
+      );
+      for (let i = 0; i < newList.length; i++) {
+        let coin = newList[i].coin;
+        let name = newList[i].name;
+        let cryptoId = newList[i].id;
+        // let coinPrice = newList[i].actualPrice;
+        let type = newList[i].type;
+        let descritpion = newList[i].descruiption;
+        let marketCap = newList[i].marketCap;
+
+        // Create URL for request
+        const coinCeckoFinalUrl =
+          coinCeckoBaseUrl + name.toLowerCase() + coinCeckoBaseUrlEnd;
+
+        // Axios Request
+        const coinInformation = await axios
+          .create({ baseURL: coinCeckoFinalUrl })
+          .get();
+
+        newList[i].actualPrice = coinInformation.data[0].current_price;
+        newList[i].marketCap = coinInformation.data[0].market_cap;
+        console.log("--- newList[i].actualPrice", newList[i].name);
+        console.log("--- newList[i].actualPrice", newList[i].actualPrice);
+
+        // If coin have not price (becauce it's just added) we put coin on database with price
+        if (newList[i].id === undefined || newList[i].id === null) {
+          console.log("in no price");
+          let coinPrice = newList[i].actualPrice.toString();
+          console.log("funcking price ==> ", coinPrice);
+          const newCoin = {
+            name,
+            coin,
+            coinPrice,
+            type,
+            descritpion,
+            marketCap
+          };
+          await instance.post(`/cryptolist/newCrypto`, {
+            newCoin
+          });
+        }
       }
+
+      // TODO
+      await cryptoContext.setCryptoListContext(
+        [...cryptoContext.cryptoListContext],
+        newList
+      );
+      console.log("--- newList 2 --- ==> ", newList);
     }
 
-    // // Retrieve new database
-    // async function fetcData2() {
-    //   console.log("--- fetcData 2 --- ");
-    //   const cryptoList = await instance.get(`/cryptoList`);
-    //   console.log("--- fetcData 2 / cryptoList => ", cryptoList);
-    //   setTimeout(fetcData3(cryptoList), 200);
-    // }
-
-    // // Create new local list with database
-    // async function fetcData3(cryptoList) {
-    //   let newList = [];
-    //   for (let i = 0; i < cryptoList.data.length; i++) {
-    //     console.log("--- fetcData 3 ---");
-    //     newList.push(cryptoList.data[i]);
-    //     // If coin have no price, retrive it online
-    //     // if (cryptoList.data[i].actualPrice === null) {
-    //     //   console.log("cryptoList.data[i].name => ", cryptoList.data[i].name);
-    //     // }
-    //   }
-    //   // fetchData4(newList);
-    // }
-
-    // // Push new list on context
-    // async function fetchData4(newList) {
-    //   console.log(
-    //     "--- fetchData4 --- cryptoContext.cryptoListContext => ",
-    //     cryptoContext.cryptoListContext
-    //   );
-    //   console.log("--- fetchData4 --- newList => ", newList);
-    //   // await cryptoContext.setCryptoListContext([]);
-    //   // await cryptoContext.setCryptoListContext(...newList);
-    //   setTimeout(
-    //     console.log(
-    //       "--- fetchData4 --- cryptoContext.cryptoListContext => ",
-    //       cryptoContext.cryptoListContext
-    //     ),
-    //     1000
-    //   );
-    // }
-
-    fetchData();
+    // fetchData();
+    udpateContextListPrice();
     // setTimeout(fetcData2, 200);
     // // setTimeout(retrieveCoinPrice, 1000);
     // console.log("--- END OF handleCallback ---");
@@ -309,6 +326,7 @@ const CryptoTable = props => {
 
   try {
     console.log("--- in render if ---", cryptoContext.cryptoListContext[0]);
+    
     return (
       <Table responsive hover>
         <thead>
@@ -360,20 +378,20 @@ const CryptoTable = props => {
     // cryptoContext.setCryptoListContext();
     return "loading ...";
   }
-
-  //   if (cryptoContext.cryptoListContext[0] !== undefined) {
-  //     async function mylog() {
-  //       console.log("--- in render if ---", cryptoContext.cryptoListContext[0]);
-  //     }
-  //     mylog();
-
-  //   } else {
-  //     cryptoContext.setCryptoListContext();
-  //     return "no coin actually";
-  //   }
 };
 
 export default CryptoTable;
+
+//   if (cryptoContext.cryptoListContext[0] !== undefined) {
+//     async function mylog() {
+//       console.log("--- in render if ---", cryptoContext.cryptoListContext[0]);
+//     }
+//     mylog();
+
+//   } else {
+//     cryptoContext.setCryptoListContext();
+//     return "no coin actually";
+//   }
 
 /* 
 //   cryptoContext.cryptoListContext[0].forEach(async (crypto, index) => {
@@ -411,3 +429,43 @@ export default CryptoTable;
       //     }
       //   });
 */
+
+// // Retrieve new database
+// async function fetcData2() {
+//   console.log("--- fetcData 2 --- ");
+//   const cryptoList = await instance.get(`/cryptoList`);
+//   console.log("--- fetcData 2 / cryptoList => ", cryptoList);
+//   setTimeout(fetcData3(cryptoList), 200);
+// }
+
+// // Create new local list with database
+// async function fetcData3(cryptoList) {
+//   let newList = [];
+//   for (let i = 0; i < cryptoList.data.length; i++) {
+//     console.log("--- fetcData 3 ---");
+//     newList.push(cryptoList.data[i]);
+//     // If coin have no price, retrive it online
+//     // if (cryptoList.data[i].actualPrice === null) {
+//     //   console.log("cryptoList.data[i].name => ", cryptoList.data[i].name);
+//     // }
+//   }
+//   // fetchData4(newList);
+// }
+
+// // Push new list on context
+// async function fetchData4(newList) {
+//   console.log(
+//     "--- fetchData4 --- cryptoContext.cryptoListContext => ",
+//     cryptoContext.cryptoListContext
+//   );
+//   console.log("--- fetchData4 --- newList => ", newList);
+//   // await cryptoContext.setCryptoListContext([]);
+//   // await cryptoContext.setCryptoListContext(...newList);
+//   setTimeout(
+//     console.log(
+//       "--- fetchData4 --- cryptoContext.cryptoListContext => ",
+//       cryptoContext.cryptoListContext
+//     ),
+//     1000
+//   );
+// }
