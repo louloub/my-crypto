@@ -12,26 +12,19 @@ let coinCeckoBaseUrlEnd =
 
 const instance = axios.create({ baseURL: "http://localhost:5000/" });
 
-const CryptoTable = props => {
+const CryptoTable = () => {
 
   // All crypto list
   const [cryptoList, setCryptoList] = useState([])
+
+  // Use to trigger cryptoList update from database
   const [updateDatabase, setUpdateDatabase] = useState(true)
 
-  // Used when create new crypto
-  // const [newCrypto, setNewCrypto] = useState()
-
-  // const [cryptoToDelete, setCryptoToDelete] = useState()
-
-  // const [isDeleteMode, setIsDeleteMode] = useState(false)
-
-  // Set cryptoList with DB when cryptoList is modified
+  // Set cryptoList with DB when updateDatabase is true
   useEffect(() => {
 
-    async function retrieveDataFromDatabase() {
-
+    (async () => {
       try {
-        console.log("use effet cryptoList => ", cryptoList)
 
         const retrieveList = await instance.get(`/cryptoList`);
 
@@ -43,33 +36,19 @@ const CryptoTable = props => {
       } catch (err) {
         console.log(err);
       }
-    }
-
-    // Function to launch saveNewDataOnDatabse after retrieveDataFromDatabase completed
-    const handleAsyncFunction = async () => {
-      await retrieveDataFromDatabase();
-      // saveNewDataOnDatabse();
-    };
-
-    handleAsyncFunction();
+    })()
 
   }, [updateDatabase, cryptoList]);
 
   /**
-   * Delete crypto
+   * Delete crypto trigger when click on delete button
    * @param crypto : crypto to delete
    */
   async function deleteCoin(crypto) {
-    // let newArray = [...cryptoList];
-    // newArray = newArray.filter(function (item) {
-    //   return item.id !== id;
-    // });
-    console.log("crypto.id => ", crypto.id)
+
     await deleteCryptoOnDatabase(crypto.id);
     setUpdateDatabase(true)
-    // setCryptoToDelete(crypto)
-    // setIsDeleteMode(true)
-    // setCryptoList(newArray)
+
   }
 
   /**
@@ -87,22 +66,6 @@ const CryptoTable = props => {
     setUpdateDatabase(true)
   }
 
-  async function updateCryptoPrice(coinCeckoFinalUrl, crytpo) {
-
-    let updatedCrypto = { ...crypto }
-
-    // Axios Request
-    const coinInformation = await axios
-      .create({ baseURL: coinCeckoFinalUrl })
-      .get();
-
-    // Update coin data
-    updatedCrypto.actualPrice = await coinInformation.data[0].current_price;
-    updatedCrypto.marketCap = await coinInformation.data[0].market_cap;
-
-    return updatedCrypto
-  }
-
   /**
    * Trigger when click on "update data" button
    * Update all crypto price and market cap from coingecko
@@ -115,68 +78,69 @@ const CryptoTable = props => {
 
       newList.forEach(async crytpo => {
 
-        // Axios Request
-        const coinInformation = await axios
-          .create({ baseURL: getCoinGeckoUrlRequest(crytpo) })
-          .get();
+        try {
 
-        if (coinInformation.data[0]) {
-          // Update coin data
-          crytpo.actualPrice = await coinInformation.data[0].current_price;
-          crytpo.marketCap = await coinInformation.data[0].market_cap;
-        } else {
-          crytpo.actualPrice = "no price"
-          crytpo.marketCap = "no market cap"
+          // Axios Request
+          const coinInformation = await axios
+            .create({ baseURL: getCoinGeckoUrlRequest(crytpo) })
+            .get();
+
+          if (coinInformation.data[0]) {
+            // Update coin data
+            crytpo.actualPrice = await coinInformation.data[0].current_price;
+            crytpo.marketCap = await coinInformation.data[0].market_cap;
+          } else {
+            crytpo.actualPrice = "no price"
+            crytpo.marketCap = "no market cap"
+          }
+
+          await instance.post(`/updateCrypto`, {
+            id: crytpo.id,
+            actualPrice: crytpo.actualPrice,
+            marketCap: crytpo.marketCap
+          });
+
+          setUpdateDatabase(true)
+        } catch (err) {
+          console.log(err);
         }
-        setUpdateDatabase(true)
-
-        await instance.post(`/updateCrypto`, {
-          id: crytpo.id,
-          actualPrice: crytpo.actualPrice,
-          marketCap: crytpo.marketCap
-        });
-
-        setUpdateDatabase(true)
 
       })
 
-      // setCryptoList(newList)
-
     }
-
-    setUpdateDatabase(true)
 
   }
 
   /**
-   * Retrieve new crypto from FLOATING BUTTON componant
+   * Retrieve new crypto from floating button componant
    * @param childData is new crypto
    */
   async function handleCallback(childData) {
 
-    let newArray = [...cryptoList];
     let newCoin = childData;
 
-    const coinInformation = await axios
-      .create({ baseURL: getCoinGeckoUrlRequest(newCoin) })
-      .get();
+    try {
+      const coinInformation = await axios
+        .create({ baseURL: getCoinGeckoUrlRequest(newCoin) })
+        .get();
 
-    if (coinInformation.data[0]) {
-      newCoin.actualPrice = await (coinInformation.data[0].current_price).toString();
-      newCoin.marketCap = await (coinInformation.data[0].market_cap).toString();
-    } else {
-      newCoin.actualPrice = "no price"
-      newCoin.marketCap = "no market cap"
+      if (coinInformation.data[0]) {
+        newCoin.actualPrice = await (coinInformation.data[0].current_price).toString();
+        newCoin.marketCap = await (coinInformation.data[0].market_cap).toString();
+      } else {
+        newCoin.actualPrice = "no price"
+        newCoin.marketCap = "no market cap"
+      }
+      setUpdateDatabase(true)
+
+      await instance.post(`/cryptolist/newCrypto`, {
+        newCoin
+      });
+
+      setUpdateDatabase(true)
+    } catch (err) {
+      console.log(err);
     }
-    setUpdateDatabase(true)
-
-    await instance.post(`/cryptolist/newCrypto`, {
-      newCoin
-    });
-
-    console.log("callback, childData => ", childData)
-
-    setUpdateDatabase(true)
 
   }
 
@@ -244,81 +208,3 @@ const CryptoTable = props => {
 };
 
 export default CryptoTable;
-
-// async function saveNewDataOnDatabse() {
-//   // const handleAsyncFunction = async () => {
-//   //   do {
-//   //     let cryptoArrayFromContext = await cryptoContext.cryptoListContext[0];
-//   //     for (let i = 0; i < cryptoArrayFromContext.length; i++) {
-//   //       console.log(cryptoArrayFromContext[i].actualPrice);
-//   //       await instance.post(`/cryptoListPrice`, {
-//   //         id: cryptoArrayFromContext[i].id,
-//   //         actualPrice: cryptoArrayFromContext[i].actualPrice,
-//   //         marketCap: cryptoArrayFromContext[i].marketCap
-//   //       });
-//   //     }
-//   //   } while (cryptoContext.cryptoListContext[0] === undefined);
-//   //   //   if (cryptoContext.cryptoListContext[0] !== undefined) {
-//   //   //     await saveOnDatabase();
-//   //   //   } else {
-//   //   //     handleAsyncFunction();
-//   //   //   }
-//   // };
-//   // handleAsyncFunction();
-// }
-
-// async function updateAllAcutalPriceInDatabase(coinName, coinPrice, cryptoId) {
-//   try {
-//     console.log(
-//       "--- updateAllAcutalPriceInDatabase --- cryptoId => ",
-//       cryptoId
-//     );
-//     console.log(
-//       "--- updateAllAcutalPriceInDatabase --- coinName => ",
-//       coinName
-//     );
-//     console.log(
-//       "--- updateAllAcutalPriceInDatabase --- coinPrice => ",
-//       coinPrice
-//     );
-
-//     // Update all crypto price, retrieve new list and set state with it
-//     const cryptoList = await instance.post(`/cryptoListPrice`, {
-//       id: cryptoId,
-//       actualPrice: coinPrice
-//     });
-//     // rconsole.log("--- updateAllAcutalPriceInDatabase --- cryptoList => ", cryptoList);
-//     const newList = await instance.get(`/cryptolist`);
-//     setTimeout(
-//       console.log(
-//         "--- updateAllAcutalPriceInDatabase --- cryptoList2 => ",
-//         newList
-//       ),
-//       100
-//     );
-
-//     // cryptoContext.setCryptoListContext(newList);
-//     // setCryptos(newList.data);
-//   } catch (err) {
-//     console.log(err);
-//   }
-// }
-
-// async function updateAllAcutalMarketCapInDatabase(
-//   coinName,
-//   coinMarketCap,
-//   cryptoId
-// ) {
-//   try {
-//     console.log(
-//       "--- updateAllAcutalMarketCapInDatabase --- cryptoId ==> ",
-//       cryptoId
-//     );
-//     // Update all crypto price, retrieve new list and set state with it
-//     const cryptoList = await instance.post(`/cryptoListMarketCap`, {
-//       id: cryptoId,
-//       marketCap: coinMarketCap
-//     });
-//     const newList = await instance.get(`/cryptoList`);
-//   } catch (err) { }
-// }
