@@ -119,28 +119,25 @@ const CryptoTable = () => {
 
     let newCoin = childData;
 
-    try {
-      const coinInformation = await axios
-        .create({ baseURL: getCoinGeckoUrlRequest(newCoin) })
-        .get();
+    const coinInformation = await axios
+      .create({ baseURL: getCoinGeckoUrlRequest(newCoin) })
+      .get();
 
-      if (coinInformation.data[0]) {
-        newCoin.actualPrice = await (coinInformation.data[0].current_price).toString();
-        newCoin.marketCap = await (coinInformation.data[0].market_cap).toString();
-      } else {
-        newCoin.actualPrice = "no price"
-        newCoin.marketCap = "no market cap"
-      }
-      setUpdateDatabase(true)
-
-      await instance.post(`/cryptolist/newCrypto`, {
-        newCoin
-      });
-
-      setUpdateDatabase(true)
-    } catch (err) {
-      console.log(err);
+    if (coinInformation.data[0]) {
+      newCoin.actualPrice = await (coinInformation.data[0].current_price).toString();
+      newCoin.marketCap = await (coinInformation.data[0].market_cap).toString();
+    } else {
+      newCoin.actualPrice = "no price"
+      newCoin.marketCap = "no market cap"
     }
+    setUpdateDatabase(true)
+    console.log("newCoin => ", newCoin)
+    await instance.post(`/cryptolist/newCrypto`, {
+      newCoin
+    });
+
+    setUpdateDatabase(true)
+
 
   }
 
