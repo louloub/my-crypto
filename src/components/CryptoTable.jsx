@@ -1,4 +1,4 @@
-import React, { useEffect, useContext } from "react";
+import React, { useEffect, useContext, useRef } from "react";
 import { Table } from "reactstrap";
 import axios from "axios";
 import { Button } from "reactstrap";
@@ -20,9 +20,20 @@ const instance = axios.create({ baseURL: "http://localhost:5000/" });
 // 6 - can udpate crypto marketcap online
 // 7 - when i add crypto his price and market cap are update with online
 
+function usePrevious(value) {
+  console.log("value ==> ", value);
+  const ref = useRef();
+  useEffect(() => {
+    ref.current = value;
+  });
+  return ref.current;
+}
+
 const CryptoTable = props => {
   const cryptoContext = useContext(CryptoContext);
   // const trigger = useContext(CryptoContext);
+  const prevCount = usePrevious(cryptoContext.cryptoListContext);
+  console.log("prevCount => ", prevCount);
 
   useEffect(() => {
     console.log("--- use effect ---");
@@ -34,7 +45,28 @@ const CryptoTable = props => {
         cryptoList = await instance.get(`/cryptoList`);
         // UPDATE ALL PRICE HERE AND AFTER PUSH LIST IN CONTEXT
         newList.push(cryptoList.data);
+        console.log("newList =>", newList)
+        // await updateAllContextPriceFromList(newList);
         await updateAllContextPriceFromList(newList);
+
+        // if (newList.length != prevCount.length) {
+        //   console.log("different size");
+        //   await updateAllContextPriceFromList(newList);
+        // } else {
+        //   for (var i = 0; i < newList.length; i++)
+        //     if (newList[i] != prevCount[i]) {
+        //       await updateAllContextPriceFromList(newList);
+        //       return "False";
+        //     } else {
+        //       return "True";
+        //     }
+        // }
+
+        // if (prevCount !== newList) {
+        //   console.log("prev is different");
+        //   await updateAllContextPriceFromList(newList);
+        // }
+
         console.log("--- retrieveDataFromDatabase --- newlist ==> ", newList);
         // await cryptoContext.setCryptoListContext(newList);
       } catch (err) {
@@ -151,7 +183,7 @@ const CryptoTable = props => {
         marketCap: coinMarketCap
       });
       const newList = await instance.get(`/cryptoList`);
-    } catch (err) {}
+    } catch (err) { }
   }
 
   async function deleteCryptoOnDatabase(cryptoId) {
@@ -174,7 +206,7 @@ const CryptoTable = props => {
   // Delete works only in state
   async function deleteCoin(id) {
     let newArray = cryptoContext.cryptoListContext;
-    newArray = newArray.filter(function(item) {
+    newArray = newArray.filter(function (item) {
       return item.id !== id;
     });
     // await setCryptos(newArray); TODO
@@ -326,7 +358,7 @@ const CryptoTable = props => {
 
   try {
     console.log("--- in render if ---", cryptoContext.cryptoListContext[0]);
-    
+
     return (
       <Table responsive hover>
         <thead>
@@ -393,7 +425,7 @@ export default CryptoTable;
 //     return "no coin actually";
 //   }
 
-/* 
+/*
 //   cryptoContext.cryptoListContext[0].forEach(async (crypto, index) => {
       //     try {
       //       let coinPrice = "";
