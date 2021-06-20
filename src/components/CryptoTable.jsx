@@ -231,71 +231,91 @@ const CryptoTable = props => {
   async function handleCallback(childData) {
     let newArray = [...cryptoList];
     let newCoin = childData;
-    newArray.push(childData);
+
+    const coinCeckoFinalUrl =
+      coinCeckoBaseUrl + newCoin.name.toLowerCase() + coinCeckoBaseUrlEnd;
+
+    const coinInformation = await axios
+      .create({ baseURL: coinCeckoFinalUrl })
+      .get();
+
+    newCoin.actualPrice = await (coinInformation.data[0].current_price).toString();
+    newCoin.marketCap = await (coinInformation.data[0].market_cap).toString();
+
+    await instance.post(`/cryptolist/newCrypto`, {
+      newCoin
+    });
+
+    newArray.push(newCoin);
+
+    setCryptoList(newArray)
+
+    // newArray.push(childData);
+
     console.log("--- handleCallback --- newCoin ==> ", newCoin);
     // setCryptoList(newArray)
 
     // let newList = [...cryptoList];
 
-    async function udpateContextListPrice() {
-      console.log(
-        "--- handleCallback / udpateContextListPrice / newArray --- ==> ",
-        newArray
-      );
-      for (let i = 0; i < newArray.length; i++) {
-        let coin = newArray[i].coin;
-        let name = newArray[i].name;
-        let cryptoId = newArray[i].id;
-        // let coinPrice = newArray[i].actualPrice;
-        let type = newArray[i].type;
-        let descritpion = newArray[i].descruiption;
-        let marketCap = newArray[i].marketCap;
+    // async function udpateContextListPrice() {
+    //   console.log(
+    //     "--- handleCallback / udpateContextListPrice / newArray --- ==> ",
+    //     newArray
+    //   );
+    //   for (let i = 0; i < newArray.length; i++) {
+    //     let coin = newArray[i].coin;
+    //     let name = newArray[i].name;
+    //     let cryptoId = newArray[i].id;
+    //     // let coinPrice = newArray[i].actualPrice;
+    //     let type = newArray[i].type;
+    //     let descritpion = newArray[i].descruiption;
+    //     let marketCap = newArray[i].marketCap;
 
-        // Create URL for request
-        const coinCeckoFinalUrl =
-          coinCeckoBaseUrl + name.toLowerCase() + coinCeckoBaseUrlEnd;
+    //     // Create URL for request
+    //     const coinCeckoFinalUrl =
+    //       coinCeckoBaseUrl + name.toLowerCase() + coinCeckoBaseUrlEnd;
 
-        // Axios Request
-        const coinInformation = await axios
-          .create({ baseURL: coinCeckoFinalUrl })
-          .get();
+    //     // Axios Request
+    //     const coinInformation = await axios
+    //       .create({ baseURL: coinCeckoFinalUrl })
+    //       .get();
 
-        newArray[i].actualPrice = coinInformation.data[0].current_price;
-        newArray[i].marketCap = coinInformation.data[0].market_cap;
-        console.log("--- newArray[i].actualPrice", newArray[i].name);
-        console.log("--- newArray[i].actualPrice", newArray[i].actualPrice);
+    //     newArray[i].actualPrice = coinInformation.data[0].current_price;
+    //     newArray[i].marketCap = coinInformation.data[0].market_cap;
+    //     console.log("--- newArray[i].actualPrice", newArray[i].name);
+    //     console.log("--- newArray[i].actualPrice", newArray[i].actualPrice);
 
-        // If coin have not price (becauce it's just added) we put coin on database with price
-        if (newArray[i].id === undefined || newArray[i].id === null) {
-          console.log("in no price");
-          let coinPrice = newArray[i].actualPrice.toString();
-          console.log("funcking price ==> ", coinPrice);
-          const newCoin = {
-            name,
-            coin,
-            coinPrice,
-            type,
-            descritpion,
-            marketCap
-          };
-          await instance.post(`/cryptolist/newCrypto`, {
-            newCoin
-          });
-        }
-      }
+    //     // If coin have not price (becauce it's just added) we put coin on database with price
+    //     if (newArray[i].id === undefined || newArray[i].id === null) {
+    //       console.log("in no price");
+    //       let coinPrice = newArray[i].actualPrice.toString();
+    //       console.log("funcking price ==> ", coinPrice);
+    //       const newCoin = {
+    //         name,
+    //         coin,
+    //         coinPrice,
+    //         type,
+    //         descritpion,
+    //         marketCap
+    //       };
+    //       await instance.post(`/cryptolist/newCrypto`, {
+    //         newCoin
+    //       });
+    //     }
+    //   }
 
-      setCryptoList(newArray)
+    //   setCryptoList(newArray)
 
-      // TODO
-      // await cryptoContext.setCryptoListContext(
-      //   [...cryptoContext.cryptoListContext],
-      //   newList
-      // );
-      console.log("--- newArray 2 --- ==> ", newArray);
-    }
+    //   // TODO
+    //   // await cryptoContext.setCryptoListContext(
+    //   //   [...cryptoContext.cryptoListContext],
+    //   //   newList
+    //   // );
+    //   console.log("--- newArray 2 --- ==> ", newArray);
+    // }
 
     // fetchData();
-    udpateContextListPrice();
+    // udpateContextListPrice();
     // setTimeout(fetcData2, 200);
     // // setTimeout(retrieveCoinPrice, 1000);
     // console.log("--- END OF handleCallback ---");
