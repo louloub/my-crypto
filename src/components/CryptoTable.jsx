@@ -12,30 +12,13 @@ let coinCeckoBaseUrlEnd =
 
 const instance = axios.create({ baseURL: "http://localhost:5000/" });
 
-// 1 - useEffect retrieve list on database
-// 2 - set list on context with database
-// 3 - can add crypto
-// 4 - can delete crypto
-// 5 - can update crypto price online
-// 6 - can udpate crypto marketcap online
-// 7 - when i add crypto his price and market cap are update with online
-
-// function usePrevious(value) {
-//   console.log("value ==> ", value);
-//   const ref = useRef();
-//   useEffect(() => {
-//     ref.current = value;
-//   });
-//   return ref.current;
-// }
-
 const CryptoTable = props => {
 
   const [cryptoList, setCryptoList] = useState([])
+  const [newCrypto, setNewCrypto] = useState()
 
   // Set cryptoList with DB when cryptoList is modified
   useEffect(() => {
-    console.log("Use effect");
 
     async function retrieveDataFromDatabase() {
 
@@ -43,13 +26,17 @@ const CryptoTable = props => {
 
         const retrieveList = await instance.get(`/cryptoList`);
 
-        // setCryptoList(retrieveList.data)
+        if (!(_.isEqual(cryptoList, retrieveList.data)) && newCrypto) {
 
-        if (!(_.isEqual(cryptoList, retrieveList.data))) {
-          console.log("not equal");
+          const newCoin = newCrypto
+          await instance.post(`/cryptolist/newCrypto`, {
+            newCoin
+          });
 
           setCryptoList(retrieveList.data)
-
+          setNewCrypto()
+        } else if (!(_.isEqual(cryptoList, retrieveList.data))) {
+          setCryptoList(retrieveList.data)
         }
 
       } catch (err) {
@@ -65,7 +52,7 @@ const CryptoTable = props => {
 
     handleAsyncFunction();
 
-  }, [cryptoList]);
+  }, [cryptoList, newCrypto]);
 
   async function saveNewDataOnDatabse() {
     // const handleAsyncFunction = async () => {
@@ -188,7 +175,10 @@ const CryptoTable = props => {
     return updatedCrypto
   }
 
-  // Retrieve online crypto price
+  /**
+   * Trigger when click on "update data" button
+   * Update all crypto price and market cap from coingecko
+   */
   async function retrieveCoinPrice() {
 
     let newList = [...cryptoList];
@@ -197,23 +187,14 @@ const CryptoTable = props => {
 
       newList.forEach(async crytpo => {
 
-        const coinCeckoFinalUrl =
-          coinCeckoBaseUrl + crytpo.name.toLowerCase() + coinCeckoBaseUrlEnd;
-
-        console.log("crytpo before update => ", crytpo)
-
-        // crytpo = await updateCryptoPrice(coinCeckoFinalUrl, crytpo)
-
         // Axios Request
         const coinInformation = await axios
-          .create({ baseURL: coinCeckoFinalUrl })
+          .create({ baseURL: getCoinGeckoUrlRequest(crytpo) })
           .get();
 
         // Update coin data
         crytpo.actualPrice = await coinInformation.data[0].current_price;
         crytpo.marketCap = await coinInformation.data[0].market_cap;
-
-        console.log("crytpo after update => ", crytpo)
 
         await instance.post(`/cryptoListPrice`, {
           id: crytpo.id,
@@ -223,37 +204,113 @@ const CryptoTable = props => {
 
       })
 
+      setCryptoList(newList)
+
     }
 
   }
 
-  // Retrieve new crypto from FLOATING BUTTON componant
+  // function updateCryptoPriceAndMarketCap(coin) {
+
+  //   let updateCoin = { ...coin}
+
+  //   const coinInformation = await axios
+  //     .create({ baseURL: getCoinGeckoUrlRequest(updateCoin) })
+  //     .get();
+
+  //   updateCoin.actualPrice = await(coinInformation.data[0].current_price).toString();
+  //   updateCoin.marketCap = await(coinInformation.data[0].market_cap).toString();
+
+  //   return updataCoin
+  // }
+
+  /**
+   * Retrieve new crypto from FLOATING BUTTON componant
+   * @param childData is new crypto
+   */
   async function handleCallback(childData) {
     let newArray = [...cryptoList];
     let newCoin = childData;
 
-    const coinCeckoFinalUrl =
-      coinCeckoBaseUrl + newCoin.name.toLowerCase() + coinCeckoBaseUrlEnd;
-
     const coinInformation = await axios
-      .create({ baseURL: coinCeckoFinalUrl })
+      .create({ baseURL: getCoinGeckoUrlRequest(newCoin) })
       .get();
 
     newCoin.actualPrice = await (coinInformation.data[0].current_price).toString();
     newCoin.marketCap = await (coinInformation.data[0].market_cap).toString();
 
-    await instance.post(`/cryptolist/newCrypto`, {
-      newCoin
-    });
-
     newArray.push(newCoin);
 
+    setNewCrypto(newCoin)
     setCryptoList(newArray)
 
-    // newArray.push(childData);
+  }
 
-    console.log("--- handleCallback --- newCoin ==> ", newCoin);
-    // setCryptoList(newArray)
+  /**
+   * Create coingecko url request for coin
+   * @param coin to retrieve url
+   * @returns complete coingecko url
+   */
+  function getCoinGeckoUrlRequest(coin) {
+    return coinCeckoBaseUrl + coin.name.toLowerCase() + coinCeckoBaseUrlEnd;
+  }
+
+  try {
+
+    return (
+      <Table responsive hover>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Coin</th>
+            <th>Actual Price</th>
+            <th>Type</th>
+            <th>Market cap</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {cryptoList.map((crypto, index) => {
+            return (
+              <tr key={index}>
+                <td>{crypto.name}</td>
+                <td>{crypto.coin}</td>
+                <td>
+                  {new Intl.NumberFormat("de-DE", {
+                    style: "currency",
+                    currency: "USD"
+                  }).format(crypto.actualPrice)}
+                </td>
+                <td>{crypto.type}</td>
+                <td>
+                  {new Intl.NumberFormat("de-DE", {
+                    style: "currency",
+                    currency: "USD"
+                  }).format(crypto.marketCap)}
+                </td>
+                <td>
+                  <Button onClick={() => deleteCoin(crypto.id)} color="warning">
+                    Delete
+                  </Button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+        <Button onClick={() => retrieveCoinPrice()} color="primary">
+          Update data
+        </Button>
+        <FloatingButton parentCallback={handleCallback} />
+      </Table>
+    );
+  } catch (err) {
+    console.log(err);
+    return "loading ...";
+  }
+};
+
+export default CryptoTable;
+// setCryptoList(newArray)
 
     // let newList = [...cryptoList];
 
@@ -319,66 +376,6 @@ const CryptoTable = props => {
     // setTimeout(fetcData2, 200);
     // // setTimeout(retrieveCoinPrice, 1000);
     // console.log("--- END OF handleCallback ---");
-  }
-
-  try {
-    // console.log("--- in render if ---", cryptoContext.cryptoListContext[0]);
-
-    return (
-      <Table responsive hover>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Coin</th>
-            <th>Actual Price</th>
-            <th>Type</th>
-            <th>Market cap</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {cryptoList.map((crypto, index) => {
-            return (
-              <tr key={index}>
-                <td>{crypto.name}</td>
-                <td>{crypto.coin}</td>
-                <td>
-                  {new Intl.NumberFormat("de-DE", {
-                    style: "currency",
-                    currency: "USD"
-                  }).format(crypto.actualPrice)}
-                </td>
-                <td>{crypto.type}</td>
-                <td>
-                  {new Intl.NumberFormat("de-DE", {
-                    style: "currency",
-                    currency: "USD"
-                  }).format(crypto.marketCap)}
-                </td>
-                <td>
-                  <Button onClick={() => deleteCoin(crypto.id)} color="warning">
-                    Delete
-                  </Button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-        <Button onClick={() => retrieveCoinPrice()} color="primary">
-          Update data
-        </Button>
-        <FloatingButton parentCallback={handleCallback} />
-      </Table>
-    );
-  } catch (err) {
-    console.log(err);
-    // cryptoContext.setCryptoListContext();
-    return "loading ...";
-  }
-};
-
-export default CryptoTable;
-
 
     // setCryptoList(newList)
 
